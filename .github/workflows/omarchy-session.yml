@@ -1,0 +1,14 @@
+name: Omarchy session checks
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    # Explicit dispatch only: requires a trusted runner in a real Wayland session.
+    runs-on: [self-hosted, linux, omarchy]
+    steps:
+      - uses: actions/checkout@v4
+      - run: omarchy plugin validate .
+      - run: python3 scripts/lint-qml.py
+      - run: python3 scripts/test-qml-runtime.py

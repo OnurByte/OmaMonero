@@ -1,0 +1,35 @@
+# Default: read-only local monerod RPC. No wallet connection or keys.
+endpoint = "http://127.0.0.1:18081"
+network = "mainnet"              # mainnet, testnet, stagenet
+transport = "local"              # local, direct, tor, i2p
+poll_interval_secs = 5           # 1..300; delay after each completed poll
+timeout_ms = 3000               # 50..30000
+
+# Remote nodes require an explicit transport policy. Direct remote RPC must
+# use HTTPS. Do not put credentials, tokens, paths, or queries in URLs.
+# endpoint = "https://your-node.example:18081"
+# transport = "direct"
+
+# SOCKS proxy policies use remote DNS and never fall back to direct access.
+# Configure a local SOCKS service separately; this app never starts Tor/I2P.
+# transport = "tor"
+# proxy = "socks5h://127.0.0.1:9050"
+# For I2P use the SOCKS endpoint of your separately configured I2P tunnel.
+# Neither policy verifies monerod's P2P route; it applies only to RPC requests.
+
+# Optional public XMR/USD prices, refreshed every 120 seconds. Kraken is the default.
+# The graphical installer asks for an explicit opt-in. Local source defaults off.
+# Proxy-configured node modes route market requests through the same proxy.
+market_enabled = false
+
+# Optional custom source. Set url to an HTTPS JSON endpoint; empty keeps Kraken.
+# Mapped response must contain current price and >=24h ordered samples.
+# Timestamps are Unix seconds, prices USD. Supported intervals: 300, 900, 1800, 3600.
+# [market_source]
+# name = "My Exchange"
+# url = "https://api.example/market.json"
+# price_pointer = "/data/price"
+# points_pointer = "/data/history"
+# timestamp_pointer = "/timestamp"
+# point_price_pointer = "/close"
+# interval_secs = 3600

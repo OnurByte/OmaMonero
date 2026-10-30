@@ -1,0 +1,8 @@
+/target/
+/.superpowers/
+*.pkg.tar.*
+/packaging/src/
+/packaging/pkg/
+/dist/
+__pycache__/
+*.py[cod]
