@@ -55,6 +55,7 @@ jobs:
             dist/PKGBUILD
             dist/SHA256SUMS
             dist/*.sha256
+            install.sh
   audit:
     runs-on: ubuntu-latest
     steps:

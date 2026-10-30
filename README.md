@@ -1,8 +1,8 @@
+# OmaMonero
+
 <p align="center">
   <img src="docs/brand/banner-reference.png" alt="OmaMonero — Secure, private and untraceable" width="960">
 </p>
-
-# OmaMonero
 
 <p align="center">
   <a href="https://github.com/tcballard/omarchy-badges"><img src="https://raw.githubusercontent.com/tcballard/omarchy-badges/75975e5b5bf75e7ede3764bcd2950046f7abfe2c/badges/v1/omarchy-plugin.svg" alt="Built for Omarchy: Plugin"></a>
@@ -16,24 +16,39 @@ bar. Click the indicator for the larger chart, node health and privacy status.
 The native panel follows Omarchy's fonts, theme and scale. Market falls are red;
 rises and flat movement are green.
 
-## Install without a terminal
+## Install
 
-1. Download the **OmaMonero 0.3.2 Linux x86_64** end-user bundle after it is published.
+### One-command Bash setup
+
+On Omarchy x86_64, open a terminal and paste this single line:
+
+```bash
+bash -o pipefail -c 'curl -fsSL https://raw.githubusercontent.com/OnurByte/OmaMonero/main/install.sh | bash'
+```
+
+It downloads the latest published release, checks its SHA-256 digest, safely
+unpacks it in a temporary folder, and opens OmaMonero's setup in the existing
+Omarchy bar. Finish by clicking **Install OmaMonero** in that panel. No `sudo`
+or administrator password is used. Public prices remain off until you opt in.
+This release currently provides a prebuilt x86_64 bundle.
+
+### Graphical setup
+
+1. Download the **OmaMonero Linux x86_64** bundle from [GitHub Releases](https://github.com/OnurByte/OmaMonero/releases/latest).
 2. Extract the folder and open **Install OmaMonero** or its desktop shortcut.
    If your file manager asks, choose **Allow Launching / Run**.
 3. The existing Omarchy bar opens its native setup panel. Choose whether to show public prices, then click **Install OmaMonero**.
 4. The Monero indicator appears in your existing bar. Click it to open the panel.
 
-No commands, Rust compiler, configuration editing or administrator password are
-needed on the tested Omarchy installation. The installer checks the download,
-stages the frontend in your existing bar and starts the user service only after
-you confirm Install inside that native panel. It uses the official Omarchy plugin manager and preserves your
-chosen bar orientation. No second dock, desktop shell, GNOME dialog, standalone settings app or invented icon is created.
+The Bash option needs only that one pasted line; the graphical option needs no
+terminal. Neither needs a Rust compiler, configuration editing or administrator
+password on the tested Omarchy installation. Setup stays in the existing bar:
+the official plugin manager installs the frontend and the user service starts
+only after you confirm **Install OmaMonero** in the native panel. Your bar
+orientation is preserved; no second dock or standalone settings app is created.
 
 This release has been built and tested on **Omarchy 4.0.6-1, Linux x86_64**.
-There is no public binary release or marketplace listing yet; a local 0.3.2
-bundle is available in `dist/`. Other processor architectures need their own
-tested binary.
+Other processor architectures need their own tested binary.
 
 ## Everyday use
 

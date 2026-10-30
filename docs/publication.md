@@ -1,7 +1,10 @@
-# Production publication gate
+# Omarchy marketplace publication and verification
 
-The local 0.3.1 bundle is a tested end-user candidate. This document does not
-claim marketplace acceptance, certification or a third-party security audit.
+“Verified” is an Omarchy marketplace status attached to one exact listed plugin
+commit. It cannot be added by editing this repository or by passing local tests.
+Marketplace checks are not a security audit, endorsement, certification or
+guarantee. The backend release asset and the Bash bootstrap are separate from
+the QML plugin snapshot and must not be described as marketplace-verified.
 
 ## Complete locally
 
@@ -21,26 +24,34 @@ claim marketplace acceptance, certification or a third-party security audit.
   links persist independently of install progress, including while that job lock
   is held. Handler removal verifies restoration before deleting its launcher.
 
-## Required before calling the public release Verified
+## Official submission requirements
 
-1. Publish the actual source in the owner's chosen public GitHub repository.
-   No repository or public message has been created automatically.
-2. Run GitHub CI on the exact commit, attach the tested binary/end-user archives
-   and checksums to its release, and bind download provenance to that commit.
-3. Supply independently verifiable release signatures/provenance and establish
-   trusted distribution. An editable checksum manifest is not authentication.
-4. Submit the repository, manifest, README, license, preview and truthful external
-   access/installer disclosures through the official marketplace submission flow.
-5. Obtain the marketplace's exact-commit verification record/maintainer decision.
-   Do not add a Verified badge before that record exists; do not imply it covers
-   the separately distributed backend binary unless the actual review does.
-6. Complete fresh-machine install/repair/removal, additional monitor/scale/theme,
-   suspend/resume and real monerod/proxy integration acceptance testing. Sign off
-   each supported architecture and Omarchy version separately.
+The official publishing guide asks for a public GitHub repository, a valid root
+manifest, README, license and safe install/removal instructions. Submissions go
+through its GitHub issue form. The initial listing uses an explicit maintainer
+`approved-and-verified` decision after a current automated baseline report and
+fresh scan of the exact commit. A passing baseline creates an automatic
+commit-bound verification record; eligible selective-review results require a
+canonical maintainer attestation. Findings, stale reports, scan failures and
+commit drift stay unverified.
 
-Official references:
-[Publishing](https://plugins.omarchy.org/publish.html) and
-[commit-bound verification](https://github.com/omacom/omarchy-plugin-marketplace/blob/main/VERIFICATION.md).
-Marketplace verification is a separate trust boundary from installation and is
-not a security audit or guarantee. The local installer and UI explicitly say
-that this candidate has not received official marketplace verification.
+This repository's source and install flow must therefore be finalized before
+submitting. After the issue is opened, do not push another commit while the
+baseline is under review. A newer source commit requires the marketplace's
+plugin-update workflow; the old record never covers newer code.
+
+The public one-line installer downloads the latest x86_64 GitHub release asset
+over HTTPS, checks its SHA-256 digest, safely extracts to a temporary directory,
+and opens the existing Omarchy setup panel. It performs no privileged action.
+Its download checksum detects corruption but is not a signature or proof that
+the release is the marketplace snapshot. Marketplace status applies only to the
+plugin snapshot, not the independently shipped service binary or bootstrap.
+
+Current repository: [OnurByte/OmaMonero](https://github.com/OnurByte/OmaMonero).
+Submission status is tracked in the linked official marketplace issue once
+created. Never display an Omarchy Verified badge until the registry publishes
+the matching `listingValidatedCommit` record.
+
+Official references: [Publishing guide](https://plugins.omarchy.org/publish.html),
+[marketplace verification rules](https://github.com/omacom/omarchy-plugin-marketplace/blob/main/VERIFICATION.md),
+and [submission form](https://github.com/omacom/omarchy-plugin-marketplace/issues/new?template=submit-plugin.yml).
