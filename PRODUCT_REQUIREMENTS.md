@@ -48,4 +48,4 @@ helper jobs are detached so plugin reload/removal cannot kill their own action;
 private FileView state carries progress, without subprocess polling.
 
 ## Branding and window correction
-Use the user-supplied OmaMonero-logo.svg unchanged. Trend colors are red for negative and green for zero/positive movement, independent of theme accent. Never open a blank/white standalone Quickshell window. Test engines must have a QtObject root, not a top-level Item that the host could wrap in a visible window.
+Use the user-supplied OmaMonero-logo.svg unchanged. Trend colors are red for negative, green for positive, and gray for exactly flat movement, independent of theme accent; keep the XMR label white. Never open a blank/white standalone Quickshell window. Test engines must have a QtObject root, not a top-level Item that the host could wrap in a visible window.

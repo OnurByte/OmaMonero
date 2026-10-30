@@ -125,8 +125,8 @@ setup-job progress. The optional URI-handler registration is user initiated;
 removal verifies restoration of the previous default before deleting the
 handler. Wallet launch takes no URI argument and never sends a transaction.
 
-QML uses `qml/v0_3_2`; change this path for each released version so Quickshell
-does not retain old component types after a hot update.
+QML uses a versioned `qml/v0_3_x` directory; change this path for each released
+version so Quickshell does not retain old component types after a hot update.
 
 
 ## Native-only correction (0.2.2)

@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 test('diagnostics navigation label stays compact with a full tooltip',()=>{
- const panel=fs.readFileSync('qml/v0_3_2/Panel.qml','utf8');
+ const panel=fs.readFileSync(path.join('qml',`v${JSON.parse(fs.readFileSync('manifest.json','utf8')).version.replaceAll('.','_')}`,'Panel.qml'),'utf8');
  assert.match(panel,/text: "Diag"/);
  assert.match(panel,/tooltipText: "Diagnostics"/);
 });
@@ -50,8 +50,8 @@ test('change labels handle rises, falls and a flat market',()=>{
  assert.equal(context.changeLabel(1.234),'+1.23%');assert.equal(context.changeLabel(-2.5),'−2.50%');assert.equal(context.changeLabel(0),'0.00%');
 });
 
-test('classic market colors distinguish negative from positive and flat',()=>{
- assert.equal(context.trendColor(-1),'#ef4444');assert.equal(context.trendColor(1),'#22c55e');assert.equal(context.trendColor(0),'#22c55e');assert.equal(context.trendColor(NaN),'#9ca3af');
+test('classic market colors distinguish negative, positive, flat and unavailable',()=>{
+ assert.equal(context.trendColor(-1),'#ef4444');assert.equal(context.trendColor(1),'#22c55e');assert.equal(context.trendColor(0),'#9ca3af');assert.equal(context.trendColor(NaN),'#9ca3af');
 });
 
 test('five-minute market history is accepted and bounded',()=>{

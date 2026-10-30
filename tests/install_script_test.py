@@ -13,7 +13,7 @@ ASSET = "omamonero-linux-x86_64.tar.gz"
 
 class SingleCommandInstallerTests(unittest.TestCase):
     def make_fixture(self, folder: Path, tamper_checksum: bool = False):
-        bundle = folder / "omamonero-0.3.2-linux-x86_64"
+        bundle = folder / "omamonero-0.3.6-linux-x86_64"
         bundle.mkdir()
         install = bundle / "Install OmaMonero"
         install.write_text(
@@ -23,7 +23,7 @@ class SingleCommandInstallerTests(unittest.TestCase):
             "Path(os.environ['OMAMONERO_TEST_MARKER']).write_text('opened')\n"
         )
         install.chmod(0o755)
-        (bundle / "bundle.json").write_text('{"version":"0.3.2"}\n')
+        (bundle / "bundle.json").write_text('{"version":"0.3.6"}\n')
         archive = folder / ASSET
         with tarfile.open(archive, "w:gz") as output:
             output.add(install, arcname=f"{bundle.name}/{install.name}")

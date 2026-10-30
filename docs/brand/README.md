@@ -1,7 +1,7 @@
 # Supplied logo and native SVG compatibility
 
 `original-logo.svg` is the user's supplied file, preserved byte for byte.
-`qml/v0_3_2/assets/OmaMonero-logo.svg` renders the same artwork using explicit
+`qml/v0_3_6/assets/OmaMonero-logo.svg` renders the same artwork using explicit
 filled paths for its five orange bands. QtSvg ignores the original `clipPath`
 and otherwise paints five solid full-width rectangles. Each native band is the
 original polygon intersected with the original rectangle's horizontal bounds.

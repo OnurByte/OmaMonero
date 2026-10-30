@@ -13,8 +13,8 @@
 
 See XMR/USD price, a compact chart and the 24-hour change in your existing upper
 bar. Click the indicator for the larger chart, node health and privacy status.
-The native panel follows Omarchy's fonts, theme and scale. Market falls are red;
-rises and flat movement are green.
+The native panel follows Omarchy's fonts, theme and scale. Market falls are red,
+rises green and flat movement gray; the XMR label stays white.
 
 ## Install
 
@@ -53,6 +53,7 @@ Other processor architectures need their own tested binary.
 ## Everyday use
 
 - **Click the bar indicator:** open the chart and node panel.
+- **Click the OmaMonero mark in the bar or panel header:** open the in-panel About page with logo, license, maintainer, X, and repository links.
 - **Settings tab in the bar panel:** change the node address, price opt-in, or market source. Leave the source URL empty for Kraken, or enter a public HTTPS JSON API and its JSON Pointer fields.
 - **Diagnostics / Remove:** both are inside the same native bar panel.
 - **Escape:** close the native panel. Tab/arrows and Enter navigate its actions.
@@ -60,7 +61,7 @@ Other processor architectures need their own tested binary.
 ## Brand assets
 
 <p align="center">
-  <img src="qml/v0_3_2/assets/OmaMonero-logo.svg" alt="OmaMonero orange Monero mark" width="120">
+  <img src="qml/v0_3_6/assets/OmaMonero-logo.svg" alt="OmaMonero orange Monero mark" width="120">
 </p>
 
 A local node is optional for the price display. If no node is running, the panel

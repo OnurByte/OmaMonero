@@ -1,6 +1,6 @@
 # Local source package. scripts/package.py stages this with a concrete checksum.
 pkgname=omamonero-core
-pkgver=0.3.2
+pkgver=0.3.6
 pkgrel=1
 pkgdesc='Read-only Monero node companion for Omarchy Quattro'
 arch=('x86_64' 'aarch64')
