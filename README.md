@@ -1,10 +1,20 @@
+<p align="center">
+  <img src="docs/brand/banner-reference.png" alt="OmaMonero — Secure, private and untraceable" width="960">
+</p>
+
 # OmaMonero
+
+<p align="center">
+  <a href="https://github.com/tcballard/omarchy-badges"><img src="https://raw.githubusercontent.com/tcballard/omarchy-badges/75975e5b5bf75e7ede3764bcd2950046f7abfe2c/badges/v1/omarchy-plugin.svg" alt="Built for Omarchy: Plugin"></a>
+  <a href="https://github.com/OnurByte/OmaMonero/actions/workflows/ci.yml"><img src="https://github.com/OnurByte/OmaMonero/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
+</p>
 
 **A clickable Monero companion for Omarchy Quattro.**
 
 See XMR/USD price, a compact chart and the 24-hour change in your existing upper
 bar. Click the indicator for the larger chart, node health and privacy status.
-The native panel follows Omarchy's fonts, theme and scale. The supplied orange OmaMonero SVG provides the brand identity; market falls are red and rises/flat movement are green.
+The native panel follows Omarchy's fonts, theme and scale. Market falls are red;
+rises and flat movement are green.
 
 ## Install without a terminal
 
@@ -31,6 +41,12 @@ tested binary.
 - **Settings tab in the bar panel:** change the node address, price opt-in, or market source. Leave the source URL empty for Kraken, or enter a public HTTPS JSON API and its JSON Pointer fields.
 - **Diagnostics / Remove:** both are inside the same native bar panel.
 - **Escape:** close the native panel. Tab/arrows and Enter navigate its actions.
+
+## Brand assets
+
+<p align="center">
+  <img src="qml/v0_3_2/assets/OmaMonero-logo.svg" alt="OmaMonero orange Monero mark" width="120">
+</p>
 
 A local node is optional for the price display. If no node is running, the panel
 says so while the price chart continues independently. Nothing starts monerod or
