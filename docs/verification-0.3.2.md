@@ -22,9 +22,10 @@ binary release or Omarchy marketplace verification.
 
 ## Limits
 
-The host provides the `rustfmt` binary but not Cargo's `cargo-fmt` wrapper, so
-the changed Rust files were checked directly with `rustfmt --check`. The
-`cargo clippy` subcommand is also unavailable here; CI runs Clippy with the
-component installed. A local end-user bundle was built, but none has been
-published as a GitHub release for this source revision. The repository is not officially marketplace-verified;
+The host provides `rustfmt` and `clippy-driver`, but not Cargo's `cargo-fmt` or
+`cargo-clippy` wrappers. All Rust files passed direct `rustfmt --check`; the
+workspace passed Clippy through `clippy-driver` with warnings denied. GitHub CI
+uses the standard wrappers as an independent check. A local end-user bundle
+was built, but none has been published as a GitHub release for this source
+revision. The repository is not officially marketplace-verified;
 that status requires an actual Omarchy registry record for the shipped commit.

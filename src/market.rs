@@ -1,5 +1,8 @@
 //! Opt-in public market data. Never uses wallet/node credentials or environment proxies.
-use crate::{config::Config, state::snapshot::now};
+use crate::{
+    config::{Config, MarketSource},
+    state::snapshot::now,
+};
 use reqwest::{Client, redirect::Policy};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -60,23 +63,18 @@ pub fn parse_ohlc(raw: &str, time: u64) -> Result<Quote, MarketError> {
 pub fn parse_custom_json(
     raw: &str,
     time: u64,
-    source: &str,
-    price_pointer: &str,
-    points_pointer: &str,
-    timestamp_pointer: &str,
-    point_price_pointer: &str,
-    interval: u64,
+    source: &MarketSource,
 ) -> Result<Quote, MarketError> {
     let invalid = MarketError::InvalidResponse;
-    if source.trim().is_empty()
-        || source.len() > 48
+    if source.name.trim().is_empty()
+        || source.name.len() > 48
         || raw.len() > 1_048_576
-        || ![300, 900, 1800, 3600].contains(&interval)
+        || ![300, 900, 1800, 3600].contains(&source.interval_secs)
         || ![
-            price_pointer,
-            points_pointer,
-            timestamp_pointer,
-            point_price_pointer,
+            &source.price_pointer,
+            &source.points_pointer,
+            &source.timestamp_pointer,
+            &source.point_price_pointer,
         ]
         .iter()
         .all(|pointer| pointer.starts_with('/') && pointer.len() <= 256)
@@ -95,9 +93,9 @@ pub fn parse_custom_json(
         }
         Ok(number)
     };
-    let current = read_price(&body, price_pointer)?;
+    let current = read_price(&body, &source.price_pointer)?;
     let rows = body
-        .pointer(points_pointer)
+        .pointer(&source.points_pointer)
         .and_then(Value::as_array)
         .ok_or(invalid)?;
     if !(2..=400).contains(&rows.len()) {
@@ -106,24 +104,25 @@ pub fn parse_custom_json(
     let mut points = Vec::with_capacity(rows.len() + 1);
     let mut previous = 0;
     for row in rows {
-        let timestamp_value = row.pointer(timestamp_pointer).ok_or(invalid)?;
+        let timestamp_value = row.pointer(&source.timestamp_pointer).ok_or(invalid)?;
         let timestamp = timestamp_value
             .as_u64()
             .or_else(|| timestamp_value.as_str()?.parse().ok())
             .ok_or(invalid)?;
         if timestamp == 0
             || timestamp > time
-            || (previous > 0 && (timestamp <= previous || timestamp - previous > interval * 2))
+            || (previous > 0
+                && (timestamp <= previous || timestamp - previous > source.interval_secs * 2))
         {
             return Err(invalid);
         }
         previous = timestamp;
         points.push(Point {
             timestamp,
-            price: read_price(row, point_price_pointer)?,
+            price: read_price(row, &source.point_price_pointer)?,
         });
     }
-    if time.saturating_sub(previous) > interval + 180 {
+    if time.saturating_sub(previous) > source.interval_secs + 180 {
         return Err(invalid);
     }
     if previous < time {
@@ -161,11 +160,11 @@ pub fn parse_custom_json(
         return Err(invalid);
     }
     Ok(Quote {
-        source: source.trim().to_owned(),
+        source: source.name.trim().to_owned(),
         currency: "USD".into(),
         fetched_at: time,
         stale_after_secs: 360,
-        sample_interval_secs: interval,
+        sample_interval_secs: source.interval_secs,
         price: current,
         change_percent: change,
         points,
@@ -329,16 +328,7 @@ async fn request(config: &Config) -> Result<Quote, MarketError> {
     if config.market_source.url.is_empty() {
         parse_ohlc_interval(text, now(), 300)
     } else {
-        parse_custom_json(
-            text,
-            now(),
-            &config.market_source.name,
-            &config.market_source.price_pointer,
-            &config.market_source.points_pointer,
-            &config.market_source.timestamp_pointer,
-            &config.market_source.point_price_pointer,
-            config.market_source.interval_secs,
-        )
+        parse_custom_json(text, now(), &config.market_source)
     }
 }
 fn network_error(error: reqwest::Error) -> MarketError {

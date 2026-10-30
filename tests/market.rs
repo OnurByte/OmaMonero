@@ -17,6 +17,17 @@ fn candles() -> Value {
         .collect();
     json!({"error":[],"result":{"XXMRZUSD":rows,"last":186400}})
 }
+fn custom_source() -> omamonero_core::config::MarketSource {
+    omamonero_core::config::MarketSource {
+        name: "My Exchange".into(),
+        url: "https://api.example/market.json".into(),
+        price_pointer: "/data/last".into(),
+        points_pointer: "/history".into(),
+        timestamp_pointer: "/at".into(),
+        point_price_pointer: "/close".into(),
+        interval_secs: 3600,
+    }
+}
 #[test]
 fn hourly_chart_and_24h_change_are_computed_from_real_values() {
     let market = parse_ohlc(&candles().to_string(), 186400).unwrap();
@@ -99,17 +110,7 @@ fn custom_json_source_maps_price_and_history_to_a_trailing_day_quote() {
         "data": {"last": 124.0},
         "history": (0..=24).map(|n| json!({"at": 100000 + n * 3600, "close": 100 + n})).collect::<Vec<_>>()
     }).to_string();
-    let quote = omamonero_core::market::parse_custom_json(
-        &raw,
-        186400,
-        "My Exchange",
-        "/data/last",
-        "/history",
-        "/at",
-        "/close",
-        3600,
-    )
-    .unwrap();
+    let quote = omamonero_core::market::parse_custom_json(&raw, 186400, &custom_source()).unwrap();
     assert_eq!(quote.source, "My Exchange");
     assert_eq!(quote.price, 124.0);
     assert_eq!(quote.sample_interval_secs, 3600);
@@ -119,24 +120,17 @@ fn custom_json_source_maps_price_and_history_to_a_trailing_day_quote() {
 #[test]
 fn custom_json_source_rejects_malformed_pointers_bad_prices_and_short_history() {
     let raw = json!({"price": 120.0, "points": [{"at": 186000, "price": 120.0}]}).to_string();
-    assert!(
-        omamonero_core::market::parse_custom_json(
-            &raw, 186400, "X", "/missing", "/points", "/at", "/price", 3600
-        )
-        .is_err()
-    );
-    assert!(
-        omamonero_core::market::parse_custom_json(
-            &raw, 186400, "X", "/price", "/points", "/at", "/price", 3600
-        )
-        .is_err()
-    );
-    assert!(
-        omamonero_core::market::parse_custom_json(
-            &raw, 186400, "X", "price", "/points", "/at", "/price", 3600
-        )
-        .is_err()
-    );
+    let mut source = custom_source();
+    source.name = "X".into();
+    source.price_pointer = "/missing".into();
+    assert!(omamonero_core::market::parse_custom_json(&raw, 186400, &source).is_err());
+    source.price_pointer = "/price".into();
+    source.points_pointer = "/points".into();
+    source.timestamp_pointer = "/at".into();
+    source.point_price_pointer = "/price".into();
+    assert!(omamonero_core::market::parse_custom_json(&raw, 186400, &source).is_err());
+    source.price_pointer = "price".into();
+    assert!(omamonero_core::market::parse_custom_json(&raw, 186400, &source).is_err());
 }
 
 #[test]
