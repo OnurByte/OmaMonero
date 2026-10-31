@@ -16,6 +16,14 @@ assert manifest['id'] == 'io.github.onurbyte.omamonero'
 assert manifest['schemaVersion'] == 1
 assert manifest['kinds'] == ['bar-widget']
 assert manifest['entryPoints'] == {'barWidget':'qml/v'+version.replace('.', '_')+'/BarWidget.qml'}
+active_qml_directory = 'v' + version.replace('.', '_')
+versioned_qml_directories = sorted(
+    path.name for path in (root/'qml').iterdir()
+    if path.is_dir() and re.fullmatch(r'v\d+_\d+_\d+', path.name)
+)
+assert versioned_qml_directories == [active_qml_directory], (
+    f'Stale QML version directories must not be shipped: {versioned_qml_directories}'
+)
 for path in (root/'qml').rglob('*'):
     assert not path.is_symlink(), path
     if path.suffix == '.qml':
