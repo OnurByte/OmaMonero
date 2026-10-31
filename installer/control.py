@@ -5,6 +5,7 @@ import argparse
 import fcntl
 import json
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -17,6 +18,48 @@ sys.dont_write_bytecode=True
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 import engine
 import release_fetch
+
+PRIVATE_ACTIONS = frozenset({'install','save','receive','preview-uri','wallet','module-config','proof'})
+MAX_REQUEST_BYTES = 16384
+
+def take_request(request_id):
+    """Consume a one-time request from the owner's private session directory."""
+    if not re.fullmatch(r'[0-9a-f]{32}',request_id):
+        raise engine.InstallError('Invalid private request identifier.')
+    # XDG_RUNTIME_DIR is verified as owner-only by state_path(). It always exists
+    # before the panel starts, unlike the plugin's own state subdirectory.
+    runtime=state_path().parent.parent
+    path=runtime/('omamonero-request-'+request_id+'.json')
+    try:
+        fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_CLOEXEC)
+    except OSError as error:
+        raise engine.InstallError('Private request is unavailable.') from error
+    try:
+        metadata=os.fstat(fd)
+        if (not stat.S_ISREG(metadata.st_mode) or metadata.st_uid!=os.geteuid()
+                or metadata.st_nlink!=1 or metadata.st_mode&0o022):
+            raise engine.InstallError('Unsafe private request file.')
+        # Qt's QSaveFile can create a new file with mode 0644. The containing
+        # runtime directory is 0700; tighten the file before consuming it.
+        os.fchmod(fd,0o600)
+        path.unlink()
+        raw=os.read(fd,MAX_REQUEST_BYTES+1)
+    except OSError as error:
+        raise engine.InstallError('Private request is unavailable.') from error
+    finally:
+        os.close(fd)
+    if len(raw)>MAX_REQUEST_BYTES:
+        raise engine.InstallError('Private request is too large.')
+    try:
+        request=json.loads(raw)
+    except (ValueError,UnicodeError) as error:
+        raise engine.InstallError('Invalid private request data.') from error
+    if (not isinstance(request,dict) or set(request)!={'endpoint','market_enabled','payload'}
+            or not (request['endpoint'] is None or isinstance(request['endpoint'],str))
+            or not isinstance(request['market_enabled'],bool)
+            or not isinstance(request['payload'],dict)):
+        raise engine.InstallError('Invalid private request data.')
+    return request
 
 def info(paths):
     config=tomllib.loads(paths.config.read_text()) if paths.config.exists() else {}
@@ -119,7 +162,7 @@ def run(action,paths,enabled=False,endpoint=None,payload=None):
     raise engine.InstallError('Unsupported action.')
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('action',choices=['info','install','save','diagnostics','remove','receive','preview-uri','open-uri','wallet','register-uri','module-config','proof']);parser.add_argument('--market',choices=['true','false'],default='false');parser.add_argument('--endpoint');parser.add_argument('--payload',default='{}');parser.add_argument('--uri');args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('action',choices=['info','install','save','diagnostics','remove','receive','preview-uri','open-uri','wallet','register-uri','module-config','proof']);parser.add_argument('--request-id');parser.add_argument('--uri');args=parser.parse_args()
     paths=engine.Paths(Path.home());state=state_path()
     if args.action=='open-uri':
         # Link opens are read-only and independent of the install/settings lock.
@@ -133,6 +176,18 @@ def main():
             message=str(error) if isinstance(error,engine.InstallError) else 'This payment link could not be opened.'
             engine.atomic_write(payment_path(),json.dumps({'state':'error','message':message},separators=(',',':')).encode(),0o600)
         return
+    # Consume even if a previous job holds the lock, so discarded requests
+    # cannot linger on disk when the panel is busy.
+    request_error=None
+    request={'endpoint':None,'market_enabled':False,'payload':{}}
+    try:
+        if args.request_id:
+            if args.action not in PRIVATE_ACTIONS:raise engine.InstallError('Unexpected private request.')
+            request=take_request(args.request_id)
+        elif args.action in PRIVATE_ACTIONS:
+            raise engine.InstallError('This action requires a private request.')
+    except engine.InstallError as error:
+        request_error=error
     # A second mutating action must not overwrite a currently running job's progress.
     lock_path=state.with_name('setup.lock');engine.reject_symlinks(lock_path)
     fd=os.open(lock_path,os.O_CREAT|os.O_RDWR|os.O_NOFOLLOW,0o600)
@@ -144,9 +199,8 @@ def main():
         def publish(status,**values):engine.atomic_write(state,json.dumps(dict(action=args.action,state=status,updated_at=int(time.time()),**values)).encode(),0o600)
         publish('running')
         try:
-            if len(args.payload)>16384:raise engine.InstallError('Request is too large.')
-            payload=json.loads(args.payload)
-            data=run(args.action,paths,args.market=='true',args.endpoint,payload)
+            if request_error:raise request_error
+            data=run(args.action,paths,request['market_enabled'],request['endpoint'],request['payload'])
             publish('done',data=data)
             if args.action in ('install','save'):engine.Runner().run(['omarchy','shell','shell','summon',engine.PLUGIN_ID],check=False)
         except Exception as error:
