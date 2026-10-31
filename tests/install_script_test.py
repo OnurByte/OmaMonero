@@ -95,18 +95,12 @@ class PinnedInstallerTests(unittest.TestCase):
         self.assertNotIn('$ASSET.sha256', source)
         subprocess.run(["bash", "-n", str(INSTALLER)], check=True)
 
-    def test_readme_verifies_bootstrap_before_execution(self):
+    def test_readme_uses_only_the_native_omarchy_install_command(self):
         text = README.read_text()
-        digest = hashlib.sha256(INSTALLER.read_bytes()).hexdigest()
-        self.assertIn(digest, text)
-        self.assertNotIn("curl -fsSL https://raw.githubusercontent.com/OnurByte/OmaMonero/main/install.sh | bash", text)
-        self.assertIn("sha256sum --check --status", text)
-        self.assertLess(text.index("sha256sum --check --status"), text.index('bash "$installer"'))
-        # The user-facing one-liner must remain a complete, parseable shell command.
-        import re
-        match = re.search(r"```bash\n(bash -euo pipefail -c [^\n]+)\n```", text)
-        self.assertIsNotNone(match, "One-line setup command is missing")
-        subprocess.run(["bash", "-n", "-c", match.group(1)], check=True)
+        self.assertIn("omarchy plugin add https://github.com/OnurByte/OmaMonero.git --enable", text)
+        self.assertNotIn("curl -fsSL", text)
+        self.assertNotIn("bash -euo pipefail -c", text)
+        self.assertLess(len(text.splitlines()), 65)
 
 
 if __name__ == "__main__":

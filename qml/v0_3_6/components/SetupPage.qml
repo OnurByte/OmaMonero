@@ -30,7 +30,7 @@ ColumnLayout {
     }
     Text {
         Layout.fillWidth: true
-        text: root.available ? "Everything runs in your user account. No administrator password is needed. A Monero node is optional for price viewing." : "Open the downloaded OmaMonero installer to prepare native setup. It will open this bar panel."
+        text: root.pending ? "Download the matching prebuilt backend from GitHub, verify its SHA-256, then install it for this user. No compiler or administrator password is needed." : root.available ? "Everything runs in your user account. A Monero node is optional for price viewing." : "The native setup helper is unavailable. Reinstall the OmaMonero plugin through Omarchy."
         wrapMode: Text.WordWrap
         textFormat: Text.PlainText
         color: Commons.Color.foreground
@@ -168,7 +168,7 @@ ColumnLayout {
     Ui.PanelSeparator { Layout.fillWidth: true }
     Ui.Button {
         Layout.fillWidth: true
-        visible: !root.confirmingRemoval
+        visible: !root.pending && !root.confirmingRemoval
         enabled: root.available && !root.busy
         text: "Remove OmaMonero"
         foreground: Commons.Color.urgent

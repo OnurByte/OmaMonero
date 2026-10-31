@@ -19,6 +19,7 @@ import time
 import tomllib
 
 PLUGIN_ID = 'io.github.onurbyte.omamonero'
+OFFICIAL_PLUGIN_ORIGIN = 'https://github.com/OnurByte/OmaMonero.git'
 PRIVILEGE_POLICY = 'Never elevate GUI/service; get(e)uid must be non-root. Future system dependency installation may use pkexec once.'
 class InstallError(Exception): pass
 
@@ -187,7 +188,7 @@ def service_unit(template:str,binary:Path,config:Path|None=None):
 def git(runner:Runner,path:Path,*args,check=True):
     return runner.run(['git','-c','core.hooksPath=/dev/null','-c','commit.gpgsign=false','-c','user.name=OmaMonero installer','-c','user.email=installer@localhost','-C',path,*args],check=check)
 def managed_files(paths:Paths):
-    return (paths.binary,paths.unit,paths.data/'installer/engine.py',paths.data/'installer/control.py')
+    return (paths.binary,paths.unit,paths.data/'installer/engine.py',paths.data/'installer/control.py',paths.data/'installer/release_fetch.py')
 
 def legacy_files(paths:Paths):
     return (paths.desktop,paths.home/'.local/share/icons/hicolor/scalable/apps/omamonero.svg',paths.data/'installer/gui.py')
@@ -197,6 +198,15 @@ def bootstrap_owned(paths:Paths):
     if not marker.is_file() or marker.is_symlink():return False
     try:return json.loads(marker.read_text()).get('source')==str(paths.source)
     except (ValueError,OSError):return False
+
+def github_managed_plugin(paths:Paths,runner:Runner):
+    """True only for the official Omarchy-managed upstream checkout."""
+    if not (paths.plugin/'.git').is_dir():return False
+    origin=git(runner,paths.plugin,'remote','get-url','origin',check=False)
+    if origin.returncode or origin.stdout.strip()!=OFFICIAL_PLUGIN_ORIGIN:return False
+    try:manifest=json.loads((paths.plugin/'manifest.json').read_text())
+    except (OSError,ValueError):return False
+    return manifest.get('id')==PLUGIN_ID and manifest.get('schemaVersion')==1
 
 def preflight(paths:Paths,runner:Runner):
     if os.geteuid()==0:raise InstallError('Open this installer from your normal desktop account. Administrator access is not needed.')
@@ -217,10 +227,11 @@ def preflight(paths:Paths,runner:Runner):
     if runner.run(['omarchy','shell','shell','ping']).stdout.strip()!='ok':raise InstallError('Sign in to an Omarchy Quattro desktop before installing.')
     runner.run(['systemctl','--user','show-environment'])
     if paths.plugin.exists():
-        if (not paths.receipt.exists() and not bootstrap_owned(paths)) or not (paths.plugin/'.git').is_dir():raise InstallError('A separate OmaMonero installation already exists. It has been preserved.')
+        github_managed=github_managed_plugin(paths,runner)
+        if (not paths.receipt.exists() and not bootstrap_owned(paths) and not github_managed) or not (paths.plugin/'.git').is_dir():raise InstallError('A separate OmaMonero installation already exists. It has been preserved.')
         if git(runner,paths.plugin,'status','--porcelain').stdout.strip():raise InstallError('Your plugin contains local changes. They have been preserved.')
         origin=git(runner,paths.plugin,'remote','get-url','origin').stdout.strip()
-        if origin!=str(paths.source):raise InstallError('This plugin is managed by another source. It has been preserved.')
+        if origin!=str(paths.source) and not github_managed:raise InstallError('This plugin is managed by another source. It has been preserved.')
     if paths.source.exists() and git(runner,paths.source,'status','--porcelain').stdout.strip():raise InstallError('The saved release has local changes. They have been preserved.')
 
 @contextmanager
@@ -250,6 +261,11 @@ def serialized(function):
 def install(bundle:Path,paths:Paths,market_enabled:bool,endpoint:str|None=None,runner:Runner|None=None,market_source:dict|None=None):
     runner=runner or Runner();metadata=verify_bundle(bundle);preflight(paths,runner)
     payload=bundle/'payload'
+    external_plugin=github_managed_plugin(paths,runner)
+    if external_plugin:
+        current=json.loads((paths.plugin/'manifest.json').read_text())
+        if current.get('version')!=metadata['version']:
+            raise InstallError('The installed plugin and prebuilt backend versions differ. Update the plugin or use a matching release.')
     runner.run(['omarchy','plugin','validate',payload/'plugin'])
     version=runner.run([payload/'omamonero-core','--version']).stdout.strip()
     if version!='omamonero-core '+metadata['version']:raise InstallError('Bundled binary version mismatch.')
@@ -272,26 +288,27 @@ def install(bundle:Path,paths:Paths,market_enabled:bool,endpoint:str|None=None,r
             tx.write(paths.binary,(payload/'omamonero-core').read_bytes(),0o755)
             tx.write(paths.config,new_config.encode())
             tx.write(paths.unit,service_unit((payload/'omamonero.service').read_text(),paths.binary,paths.config).encode(),0o644)
-            for name in ('engine.py','control.py'):
+            for name in ('engine.py','control.py','release_fetch.py'):
                 tx.write(paths.data/'installer'/name,(bundle/'installer'/name).read_bytes(),0o644)
             for legacy in legacy_files(paths):
                 if legacy.exists():tx.delete(legacy)
             previous=json.loads(paths.receipt.read_text()) if paths.receipt.exists() else {}
             tx.write(paths.receipt,json.dumps({**previous,'version':metadata['version'],'architecture':metadata['architecture'],'market_enabled':market_enabled,'market_source':(market_source or {}).get('name','Kraken') if market_enabled else None,'marketplace_verified':False,'installed_files':{str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in (*managed_files(paths),paths.home/'.local/share/applications/omamonero-link.desktop') if p.is_file()}}).encode())
-            paths.source.mkdir(parents=True,exist_ok=True)
-            if not source_existed:git(runner,paths.source,'init','--quiet','--template=')
-            # Snapshot only plugin files; keep the local Git origin stable across updates.
-            for p in list(paths.source.iterdir()):
-                if p.name=='.git':continue
-                if p.is_dir():shutil.rmtree(p)
-                else:p.unlink()
-            for p in (payload/'plugin').iterdir():
-                if p.is_dir():shutil.copytree(p,paths.source/p.name)
-                else:shutil.copy2(p,paths.source/p.name)
-            git(runner,paths.source,'add','--all')
-            git(runner,paths.source,'commit','--quiet','--allow-empty','-m','Install OmaMonero '+metadata['version'])
-            if plugin_existed:runner.run(['omarchy','plugin','update',PLUGIN_ID,'--yes'])
-            else:runner.run(['omarchy','plugin','add',paths.source,'--yes'])
+            if not external_plugin:
+                paths.source.mkdir(parents=True,exist_ok=True)
+                if not source_existed:git(runner,paths.source,'init','--quiet','--template=')
+                # Snapshot only plugin files; keep the local Git origin stable across updates.
+                for p in list(paths.source.iterdir()):
+                    if p.name=='.git':continue
+                    if p.is_dir():shutil.rmtree(p)
+                    else:p.unlink()
+                for p in (payload/'plugin').iterdir():
+                    if p.is_dir():shutil.copytree(p,paths.source/p.name)
+                    else:shutil.copy2(p,paths.source/p.name)
+                git(runner,paths.source,'add','--all')
+                git(runner,paths.source,'commit','--quiet','--allow-empty','-m','Install OmaMonero '+metadata['version'])
+                if plugin_existed:runner.run(['omarchy','plugin','update',PLUGIN_ID,'--yes'])
+                else:runner.run(['omarchy','plugin','add',paths.source,'--yes'])
             deadline=time.monotonic()+8
             while True:
                 listing=json.loads(runner.run(['omarchy','shell','shell','listPlugins']).stdout)
@@ -312,12 +329,14 @@ def install(bundle:Path,paths:Paths,market_enabled:bool,endpoint:str|None=None,r
                 if ready:break
                 if time.monotonic()>deadline:raise InstallError('The background service did not publish a fresh status. Previous settings will be restored.')
                 time.sleep(0.15)
-            runner.run(['omarchy','plugin','enable',PLUGIN_ID,'--section','right'])
+            if external_plugin:
+                if not plugin_was_enabled:runner.run(['omarchy','plugin','enable',PLUGIN_ID])
+            else:runner.run(['omarchy','plugin','enable',PLUGIN_ID,'--section','right'])
             tx.commit()
     except BaseException:
         runner.run(['systemctl','--user','stop','omamonero.service'],check=False)
         if plugin_existed:
-            if plugin_head:git(runner,paths.plugin,'reset','--hard',plugin_head,check=False)
+            if plugin_head and not external_plugin:git(runner,paths.plugin,'reset','--hard',plugin_head,check=False)
             runner.run(['omarchy','plugin','enable' if plugin_was_enabled else 'disable',PLUGIN_ID],check=False)
         elif paths.plugin.exists():runner.run(['omarchy','plugin','remove',PLUGIN_ID,'--yes'],check=False)
         if source_existed and source_head:git(runner,paths.source,'reset','--hard',source_head,check=False)
@@ -382,6 +401,8 @@ def uninstall(paths:Paths,runner:Runner|None=None):
 @serialized
 def bootstrap(bundle:Path,paths:Paths,runner:Runner|None=None):
     runner=runner or Runner();metadata=verify_bundle(bundle);preflight(paths,runner)
+    if github_managed_plugin(paths,runner):
+        raise InstallError('This plugin is already managed by Omarchy. Open XMR Settings to install the matching backend.')
     runner.run(['omarchy','plugin','validate',bundle/'payload/plugin'])
     paths.data.mkdir(parents=True,exist_ok=True)
     pending=paths.data/'pending'

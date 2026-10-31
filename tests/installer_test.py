@@ -132,7 +132,7 @@ class InstallationFlowTests(unittest.TestCase):
  make_bundle=InstallerTests.make_bundle
  def full_bundle(self,root):
   bundle=self.make_bundle(root)
-  extra={'installer/engine.py':Path(engine.__file__).read_bytes(),'installer/control.py':(Path(engine.__file__).parent/'control.py').read_bytes()}
+  extra={'installer/engine.py':Path(engine.__file__).read_bytes(),'installer/control.py':(Path(engine.__file__).parent/'control.py').read_bytes(),'installer/release_fetch.py':(Path(engine.__file__).parent/'release_fetch.py').read_bytes()}
   m=json.loads((bundle/'bundle.json').read_text())
   for name,data in extra.items():
    p=bundle/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data);m['files'][name]=hashlib.sha256(data).hexdigest()
@@ -207,6 +207,23 @@ class NativeBootstrapTests(unittest.TestCase):
    text=(root/name).read_text()
    self.assertNotIn("['zenity'",text)
    self.assertNotIn('gtk-launch',text)
+
+ def test_official_github_plugin_is_not_replaced_by_local_snapshot(self):
+  with tempfile.TemporaryDirectory() as d:
+   root=Path(d);home=root/'home';home.mkdir();paths=engine.Paths(home,home/'.config');bundle=self.full_bundle(root);runner=FakeSession(paths)
+   paths.plugin.mkdir(parents=True,exist_ok=True)
+   engine.git(runner,paths.plugin,'init','--quiet','--template=')
+   engine.git(runner,paths.plugin,'remote','add','origin','https://github.com/OnurByte/OmaMonero.git')
+   (paths.plugin/'manifest.json').write_bytes((bundle/'payload/plugin/manifest.json').read_bytes())
+   engine.git(runner,paths.plugin,'add','--all');engine.git(runner,paths.plugin,'commit','--quiet','-m','official source')
+   original=engine.git(runner,paths.plugin,'rev-parse','HEAD').stdout.strip()
+   from contextlib import nullcontext
+   with patch('engine.os.geteuid',return_value=1000),patch('engine.reject_symlinks'),patch('engine.operation_lock',return_value=nullcontext()):
+    engine.install(bundle,paths,False,runner=runner)
+   self.assertEqual(engine.git(runner,paths.plugin,'rev-parse','HEAD').stdout.strip(),original)
+   self.assertEqual(engine.git(runner,paths.plugin,'remote','get-url','origin').stdout.strip(),'https://github.com/OnurByte/OmaMonero.git')
+   self.assertFalse(paths.source.exists())
+   self.assertNotIn(['omarchy','plugin','update',engine.PLUGIN_ID,'--yes'],runner.calls)
 
 if __name__=='__main__':unittest.main()
 
@@ -311,7 +328,7 @@ class UriHandlerRestoreTests(unittest.TestCase):
    import subprocess
    home=Path(d);paths=engine.Paths(home,home/'.config');runner=FakeSession(paths)
    paths.config.parent.mkdir(parents=True);paths.config.write_text('market_enabled = false\n')
-   for file,data in ((paths.binary,b'core'),(paths.unit,b'[Service]\n'),(paths.data/'installer/engine.py',b'engine'),(paths.data/'installer/control.py',b'control')):
+   for file,data in ((paths.binary,b'core'),(paths.unit,b'[Service]\n'),(paths.data/'installer/engine.py',b'engine'),(paths.data/'installer/control.py',b'control'),(paths.data/'installer/release_fetch.py',b'release')):
     file.parent.mkdir(parents=True,exist_ok=True);file.write_bytes(data)
    paths.source.mkdir(parents=True);engine.git(runner,paths.source,'init','--quiet','--template=');(paths.source/'README').write_text('source');engine.git(runner,paths.source,'add','--all');engine.git(runner,paths.source,'commit','--quiet','-m','fixture')
    runner.run(['omarchy','plugin','add',paths.source,'--yes']);runner.active=True;runner.enabled=True;runner.plugin_enabled=True

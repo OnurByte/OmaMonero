@@ -28,7 +28,7 @@ with tempfile.TemporaryDirectory(prefix='omamonero-bundle-') as folder:
     shutil.copy2(binary,stage/'payload/omamonero-core')
     shutil.copy2(root/'packaging/omamonero.service',stage/'payload/omamonero.service')
     (stage/'installer').mkdir()
-    for entry in ('engine.py','control.py','bootstrap.py'):shutil.copy2(root/'installer'/entry,stage/'installer'/entry)
+    for entry in ('engine.py','control.py','bootstrap.py','release_fetch.py'):shutil.copy2(root/'installer'/entry,stage/'installer'/entry)
     launcher='''[Desktop Entry]
 Version=1.0
 Type=Application

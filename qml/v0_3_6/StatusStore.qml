@@ -13,9 +13,12 @@ QtObject {
     readonly property string statusPath: runtimeDirectory ? runtimeDirectory + "/omamonero/status.json" : ""
 
     readonly property string dataDirectory: Quickshell.env("HOME") + "/.local/share/omamonero"
+    readonly property string pluginControl: decodeURIComponent(String(Qt.resolvedUrl("../../installer/control.py")).replace(/^file:\/\//, ""))
     property bool pendingSetup: false
     property bool installedControls: false
-    readonly property bool controlsAvailable: pendingSetup || installedControls
+    property bool pluginControls: false
+    readonly property bool needsInstall: pendingSetup || (!installedControls && pluginControls)
+    readonly property bool controlsAvailable: pendingSetup || installedControls || pluginControls
     property var setup: ({state: "idle"})
     property var setupData: ({})
     property var paymentData: ({})
@@ -23,7 +26,7 @@ QtObject {
     function command(action, endpoint, marketEnabled, payload) {
         if (!controlsAvailable || ["info", "install", "save", "diagnostics", "remove", "receive", "preview-uri", "wallet", "register-uri", "module-config", "proof"].indexOf(action) < 0 || (setup.state === "running" && action !== "info")) return
         if (["receive", "preview-uri"].indexOf(action) >= 0) paymentData = ({})
-        var helper = dataDirectory + (pendingSetup ? "/pending/installer/control.py" : "/installer/control.py")
+        var helper = pendingSetup ? dataDirectory + "/pending/installer/control.py" : installedControls ? dataDirectory + "/installer/control.py" : pluginControl
         var args = ["/usr/bin/python3", helper, action]
         if (action === "save" || action === "install") args = args.concat(["--endpoint", endpoint || "http://127.0.0.1:18081", "--market", marketEnabled ? "true" : "false"])
         if (payload) args = args.concat(["--payload", JSON.stringify(payload)])
@@ -105,6 +108,13 @@ QtObject {
             } catch (e) { root.installedControls = false }
         }
         onLoadFailed: root.installedControls = false
+    }
+    property FileView pluginControlFile: FileView {
+        path: root.pluginControl
+        preload: true
+        printErrors: false
+        onLoaded: root.pluginControls = true
+        onLoadFailed: root.pluginControls = false
     }
 
     // One store per engine, shared by all monitor widgets. No processes or RPC.

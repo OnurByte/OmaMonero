@@ -22,13 +22,13 @@ Ui.Panel {
 
     function open() {
         selectedAction = 0
-        if (StatusStore.pendingSetup) page = "settings"
+        if (StatusStore.needsInstall) page = "settings"
         StatusStore.refresh()
         if (StatusStore.controlsAvailable) StatusStore.command("info")
         controller.show()
     }
     function openAbout() {
-        root.page = StatusStore.pendingSetup ? "settings" : "about"
+        root.page = StatusStore.needsInstall ? "settings" : "about"
         root.open()
     }
     function showSettings() {
@@ -47,6 +47,9 @@ Ui.Panel {
 
     Connections {
         target: StatusStore
+        function onNeedsInstallChanged() {
+            if (StatusStore.needsInstall && root.opened) root.showSettings()
+        }
         function onPaymentDataChanged() {
             const requestId = StatusStore.paymentData && StatusStore.paymentData.request_id ? StatusStore.paymentData.request_id : ""
             if (requestId !== "" && requestId !== root.lastAutomaticRequest) {
@@ -165,7 +168,7 @@ Ui.Panel {
                             Layout.fillWidth: true
                             visible: !root.hasMetrics
                             text: root.view.state === "offline" ? "The node is not reachable. Prices work independently; check the node address in Settings."
-                                : root.view.state === "missing" ? "Open Settings to finish native setup, or open the downloaded installer."
+                                : root.view.state === "missing" ? "Open Settings to download and install the matching backend."
                                 : "Open Diagnostics to check the background service."
                             wrapMode: Text.WordWrap
                             color: Commons.Color.foreground
@@ -208,10 +211,10 @@ Ui.Panel {
                         id: setupForm
                         Layout.fillWidth: true
                         visible: root.page === "settings"
-                        pending: StatusStore.pendingSetup
+                        pending: StatusStore.needsInstall
                         available: StatusStore.controlsAvailable
                         busy: root.busy
-                        onApplyRequested: function(endpoint, marketEnabled, marketSource) { StatusStore.command(StatusStore.pendingSetup ? "install" : "save", endpoint, marketEnabled, {market_source: marketSource}) }
+                        onApplyRequested: function(endpoint, marketEnabled, marketSource) { StatusStore.command(StatusStore.needsInstall ? "install" : "save", endpoint, marketEnabled, {market_source: marketSource}) }
                         onRemoveRequested: StatusStore.command("remove")
                         onCloseRequested: root.close()
                     }

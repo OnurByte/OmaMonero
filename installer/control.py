@@ -10,11 +10,13 @@ import stat
 import subprocess
 import hashlib
 import sys
+import tempfile
 import time
 import tomllib
 sys.dont_write_bytecode=True
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 import engine
+import release_fetch
 
 def info(paths):
     config=tomllib.loads(paths.config.read_text()) if paths.config.exists() else {}
@@ -71,9 +73,18 @@ def run(action,paths,enabled=False,endpoint=None,payload=None):
     if action=='info':return info(paths)
     if action=='install':
         pending=paths.data/'pending'
-        result=engine.install(pending,paths,enabled,endpoint,market_source=payload.get('market_source'))
-        shutil.rmtree(pending)
-        (paths.data/'bootstrap.json').unlink(missing_ok=True)
+        if (pending/'bundle.json').is_file():
+            result=engine.install(pending,paths,enabled,endpoint,market_source=payload.get('market_source'))
+            shutil.rmtree(pending)
+            (paths.data/'bootstrap.json').unlink(missing_ok=True)
+        else:
+            if not engine.github_managed_plugin(paths,engine.Runner()):
+                raise engine.InstallError('Install the official OmaMonero plugin through Omarchy first.')
+            try:version=json.loads((paths.plugin/'manifest.json').read_text())['version']
+            except (OSError,ValueError,KeyError) as error:raise engine.InstallError('The plugin manifest is invalid.') from error
+            with tempfile.TemporaryDirectory(prefix='omamonero-release-') as directory:
+                bundle=release_fetch.download_verified_release(version,Path(directory))
+                result=engine.install(bundle,paths,enabled,endpoint,market_source=payload.get('market_source'))
         return dict(info(paths),message='Installation complete. Everything is available in the bar.',version=result['version'])
     if action=='save':engine.settings(paths,enabled,endpoint,market_source=payload.get('market_source'));return dict(info(paths),message='Settings saved.')
     if action=='diagnostics':
