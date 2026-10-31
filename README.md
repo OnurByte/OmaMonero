@@ -18,6 +18,26 @@ rises green and flat movement gray; the XMR label stays white.
 
 ## Install
 
+### Verified terminal setup (optional)
+
+On Omarchy x86_64, paste this **single line** in the terminal (Bash, fish or zsh):
+
+```bash
+bash -euo pipefail -c 'installer=$(mktemp); trap "rm -f -- \"\$installer\"" EXIT; curl -fsSL --proto "=https" --tlsv1.2 https://raw.githubusercontent.com/OnurByte/OmaMonero/main/install.sh -o "$installer"; printf "%s  %s\n" "d61fc48b035dc4dca4cd2baa6237dc8d97ab0d3bf618b1d04a94746344786104" "$installer" | sha256sum --check --status; bash "$installer"'
+```
+
+The command downloads `install.sh` into a private temporary file, verifies its
+pinned SHA-256 **before running Bash**, then verifies the pinned `v0.3.2` release
+archive before opening the native installation panel. If either digest differs,
+the install stops. No `sudo`, Rust compiler or administrator password is needed.
+
+The bootstrap digest is intentionally fixed in this README. It must be updated
+with every reviewed bootstrap change; it never silently executes a changed
+`main/install.sh`. The bundle SHA-256 is also fixed, so the install does not
+follow `releases/latest`. Release v0.3.2 points to source commit
+`004c7620a0bfdd2bdc4969a738acfed654b7157e`, although that alone does
+not prove build provenance.
+
 ### Graphical setup
 
 1. Download the [OmaMonero v0.3.2 Linux x86_64 bundle](https://github.com/OnurByte/OmaMonero/releases/download/v0.3.2/omamonero-linux-x86_64.tar.gz).
@@ -31,29 +51,15 @@ Pinned v0.3.2 archive SHA-256:
 b1ea936ff1a0edb254f615f2dc02d3fb9ac61722e40c7a053100d87dba3fff3b
 ```
 
-The graphical archive does not verify its own download provenance. If your file manager cannot check SHA-256 before launching, use the verified terminal setup below. A signed graphical distribution is still needed for completely command-free verification.
+The graphical archive does not verify its own download provenance. If your file manager cannot check SHA-256 before launching, use the terminal setup above. A signed graphical distribution is still needed for completely command-free verification.
 
-### Verified terminal setup (optional)
+Both options open OmaMonero's setup inside the existing Omarchy bar. The official
+plugin manager installs the frontend and the user service starts only after
+you click **Install OmaMonero**. Public market prices remain off until you opt
+in. Your bar orientation is preserved; no second dock or settings app is used.
 
-On Omarchy x86_64, paste this complete block as one shell command. It downloads the bootstrap to a temporary file, checks the bootstrap's pinned SHA-256 **before running it**, then checks the pinned v0.3.2 bundle digest before executing its companion:
-
-```bash
-(
-  set -euo pipefail
-  installer="$(mktemp)"
-  trap 'rm -f -- "$installer"' EXIT
-  curl -fsSL --proto '=https' --tlsv1.2 \
-    https://raw.githubusercontent.com/OnurByte/OmaMonero/main/install.sh -o "$installer"
-  printf '%s  %s\n' 'd61fc48b035dc4dca4cd2baa6237dc8d97ab0d3bf618b1d04a94746344786104' "$installer" | sha256sum --check --status
-  bash "$installer"
-)
-```
-
-The digest above is fixed in this reviewed README; it must be updated deliberately with every bootstrap change. The downloaded script pins **v0.3.2**, not the moving `latest` release. The published v0.3.2 release points to source commit `004c7620a0bfdd2bdc4969a738acfed654b7157e`, not the newer development HEAD. The archive hash identifies its exact bytes; it does not prove the build was produced from that commit.
-
-Both options open OmaMonero's setup inside the existing Omarchy bar. The official plugin manager installs the frontend and the user service starts only after you click **Install OmaMonero**. No `sudo`, Rust compiler, separate settings app or administrator password is required. Public market prices remain off until you opt in. Your bar orientation is preserved.
-
-The v0.3.2 release was built and tested on **Omarchy 4.0.6-1, Linux x86_64**. Other processor architectures require a separately tested release.
+The v0.3.2 release was built and tested on **Omarchy 4.0.6-1, Linux x86_64**.
+Other processor architectures require a separately tested release.
 
 ## Everyday use
 

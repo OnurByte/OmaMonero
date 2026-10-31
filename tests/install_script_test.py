@@ -98,10 +98,15 @@ class PinnedInstallerTests(unittest.TestCase):
     def test_readme_verifies_bootstrap_before_execution(self):
         text = README.read_text()
         digest = hashlib.sha256(INSTALLER.read_bytes()).hexdigest()
-        self.assertIn(f"'{digest}'", text)
+        self.assertIn(digest, text)
         self.assertNotIn("curl -fsSL https://raw.githubusercontent.com/OnurByte/OmaMonero/main/install.sh | bash", text)
         self.assertIn("sha256sum --check --status", text)
         self.assertLess(text.index("sha256sum --check --status"), text.index('bash "$installer"'))
+        # The user-facing one-liner must remain a complete, parseable shell command.
+        import re
+        match = re.search(r"```bash\n(bash -euo pipefail -c [^\n]+)\n```", text)
+        self.assertIsNotNone(match, "One-line setup command is missing")
+        subprocess.run(["bash", "-n", "-c", match.group(1)], check=True)
 
 
 if __name__ == "__main__":
