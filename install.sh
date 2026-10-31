@@ -3,7 +3,11 @@ set -Eeuo pipefail
 
 REPOSITORY="OnurByte/OmaMonero"
 ASSET="omamonero-linux-x86_64.tar.gz"
-RELEASE_URL="https://github.com/${REPOSITORY}/releases/latest/download"
+RELEASE_TAG="v0.3.2"
+# The reviewed v0.3.2 release is built from 004c7620a0bfdd2bdc4969a738acfed654b7157e.
+# Update the tag and independently reviewed archive digest together for each release.
+EXPECTED_SHA256="b1ea936ff1a0edb254f615f2dc02d3fb9ac61722e40c7a053100d87dba3fff3b"
+RELEASE_URL="https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}"
 
 if (( EUID == 0 )); then
     printf '%s\n' 'Run OmaMonero setup as your normal desktop user; administrator access is not needed.' >&2
@@ -29,11 +33,9 @@ cleanup() {
 trap cleanup EXIT
 
 archive="$work/$ASSET"
-checksum="$work/$ASSET.sha256"
-curl --fail --location --silent --show-error --retry 3 --output "$archive" "$RELEASE_URL/$ASSET"
-curl --fail --location --silent --show-error --retry 3 --output "$checksum" "$RELEASE_URL/$ASSET.sha256"
-(cd "$work" && sha256sum --check --status "$ASSET.sha256") || {
-    printf '%s\n' 'The release archive failed its SHA-256 check. Nothing was installed.' >&2
+curl --fail --location --silent --show-error --proto '=https' --tlsv1.2 --retry 3 --output "$archive" "$RELEASE_URL/$ASSET"
+printf '%s  %s\n' "$EXPECTED_SHA256" "$archive" | sha256sum --check --status || {
+    printf '%s\n' 'The pinned release digest did not match. Nothing was executed or installed.' >&2
     exit 1
 }
 
