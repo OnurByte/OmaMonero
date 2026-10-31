@@ -40,12 +40,15 @@ submitting. After the issue is opened, do not push another commit while the
 baseline is under review. A newer source commit requires the marketplace's
 plugin-update workflow; the old record never covers newer code.
 
-The public one-line installer downloads the latest x86_64 GitHub release asset
-over HTTPS, checks its SHA-256 digest, safely extracts to a temporary directory,
-and opens the existing Omarchy setup panel. It performs no privileged action.
-Its download checksum detects corruption but is not a signature or proof that
-the release is the marketplace snapshot. Marketplace status applies only to the
-plugin snapshot, not the independently shipped service binary or bootstrap.
+The optional shell bootstrap must be downloaded and checked against the SHA-256
+pinned in the reviewed README **before execution**. The bootstrap pins one
+explicit release tag and one independent expected archive digest; it must never
+execute from a moving branch without that pre-execution check, or download a
+moving `latest` release. Each new release requires deliberate digest updates.
+The no-terminal graphical path requires independent archive verification before
+launch; a signed graphical package is still needed to make that automatic.
+An archive checksum is not an authenticity signature, and marketplace status
+applies only to the plugin snapshot, not the independently shipped binary.
 
 Current repository: [OnurByte/OmaMonero](https://github.com/OnurByte/OmaMonero).
 Submission status is tracked in the linked official marketplace issue once

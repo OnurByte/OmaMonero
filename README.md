@@ -18,37 +18,42 @@ rises green and flat movement gray; the XMR label stays white.
 
 ## Install
 
-### One-command Bash setup
-
-On Omarchy x86_64, open a terminal and paste this single line:
-
-```bash
-bash -o pipefail -c 'curl -fsSL https://raw.githubusercontent.com/OnurByte/OmaMonero/main/install.sh | bash'
-```
-
-It downloads the latest published release, checks its SHA-256 digest, safely
-unpacks it in a temporary folder, and opens OmaMonero's setup in the existing
-Omarchy bar. Finish by clicking **Install OmaMonero** in that panel. No `sudo`
-or administrator password is used. Public prices remain off until you opt in.
-This release currently provides a prebuilt x86_64 bundle.
-
 ### Graphical setup
 
-1. Download the **OmaMonero Linux x86_64** bundle from [GitHub Releases](https://github.com/OnurByte/OmaMonero/releases/latest).
-2. Extract the folder and open **Install OmaMonero** or its desktop shortcut.
-   If your file manager asks, choose **Allow Launching / Run**.
-3. The existing Omarchy bar opens its native setup panel. Choose whether to show public prices, then click **Install OmaMonero**.
-4. The Monero indicator appears in your existing bar. Click it to open the panel.
+1. Download the [OmaMonero v0.3.2 Linux x86_64 bundle](https://github.com/OnurByte/OmaMonero/releases/download/v0.3.2/omamonero-linux-x86_64.tar.gz).
+2. Verify the downloaded archive's SHA-256 against the pinned value below before opening any file inside it. A checksum published alongside the same archive is not an independent trust anchor.
+3. Extract the folder and open **Install OmaMonero** or its desktop shortcut. If your file manager asks, choose **Allow Launching / Run**.
+4. The existing Omarchy bar opens its native setup panel. Choose whether to show public prices, then click **Install OmaMonero**.
 
-The Bash option needs only that one pasted line; the graphical option needs no
-terminal. Neither needs a Rust compiler, configuration editing or administrator
-password on the tested Omarchy installation. Setup stays in the existing bar:
-the official plugin manager installs the frontend and the user service starts
-only after you confirm **Install OmaMonero** in the native panel. Your bar
-orientation is preserved; no second dock or standalone settings app is created.
+Pinned v0.3.2 archive SHA-256:
 
-This release has been built and tested on **Omarchy 4.0.6-1, Linux x86_64**.
-Other processor architectures need their own tested binary.
+```text
+b1ea936ff1a0edb254f615f2dc02d3fb9ac61722e40c7a053100d87dba3fff3b
+```
+
+The graphical archive does not verify its own download provenance. If your file manager cannot check SHA-256 before launching, use the verified terminal setup below. A signed graphical distribution is still needed for completely command-free verification.
+
+### Verified terminal setup (optional)
+
+On Omarchy x86_64, paste this complete block as one shell command. It downloads the bootstrap to a temporary file, checks the bootstrap's pinned SHA-256 **before running it**, then checks the pinned v0.3.2 bundle digest before executing its companion:
+
+```bash
+(
+  set -euo pipefail
+  installer="$(mktemp)"
+  trap 'rm -f -- "$installer"' EXIT
+  curl -fsSL --proto '=https' --tlsv1.2 \
+    https://raw.githubusercontent.com/OnurByte/OmaMonero/main/install.sh -o "$installer"
+  printf '%s  %s\n' 'def28a775032b29288ec93be4e89307956d5f9928a88d763201ddf07d11068e0' "$installer" | sha256sum --check --status
+  bash "$installer"
+)
+```
+
+The digest above is fixed in this reviewed README; it must be updated deliberately with every bootstrap change. The downloaded script pins **v0.3.2**, not the moving `latest` release. The published v0.3.2 release points to source commit `004c7620a0bfdd2bdc4969a738acfed654b7157e`, not the newer development HEAD. The archive hash identifies its exact bytes; it does not prove the build was produced from that commit.
+
+Both options open OmaMonero's setup inside the existing Omarchy bar. The official plugin manager installs the frontend and the user service starts only after you click **Install OmaMonero**. No `sudo`, Rust compiler, separate settings app or administrator password is required. Public market prices remain off until you opt in. Your bar orientation is preserved.
+
+The v0.3.2 release was built and tested on **Omarchy 4.0.6-1, Linux x86_64**. Other processor architectures require a separately tested release.
 
 ## Everyday use
 
