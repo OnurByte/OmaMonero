@@ -266,6 +266,10 @@ def install(bundle:Path,paths:Paths,market_enabled:bool,endpoint:str|None=None,r
         current=json.loads((paths.plugin/'manifest.json').read_text())
         if current.get('version')!=metadata['version']:
             raise InstallError('The installed plugin and prebuilt backend versions differ. Update the plugin or use a matching release.')
+        for name in ('engine.py','control.py','release_fetch.py'):
+            helper=paths.plugin/'installer'/name
+            reject_symlinks(helper)
+            if not helper.is_file():raise InstallError('The Omarchy plugin is missing its native setup helper.')
     runner.run(['omarchy','plugin','validate',payload/'plugin'])
     version=runner.run([payload/'omamonero-core','--version']).stdout.strip()
     if version!='omamonero-core '+metadata['version']:raise InstallError('Bundled binary version mismatch.')
@@ -289,7 +293,8 @@ def install(bundle:Path,paths:Paths,market_enabled:bool,endpoint:str|None=None,r
             tx.write(paths.config,new_config.encode())
             tx.write(paths.unit,service_unit((payload/'omamonero.service').read_text(),paths.binary,paths.config).encode(),0o644)
             for name in ('engine.py','control.py','release_fetch.py'):
-                tx.write(paths.data/'installer'/name,(bundle/'installer'/name).read_bytes(),0o644)
+                helper=(paths.plugin/'installer'/name) if external_plugin else (bundle/'installer'/name)
+                tx.write(paths.data/'installer'/name,helper.read_bytes(),0o644)
             for legacy in legacy_files(paths):
                 if legacy.exists():tx.delete(legacy)
             previous=json.loads(paths.receipt.read_text()) if paths.receipt.exists() else {}

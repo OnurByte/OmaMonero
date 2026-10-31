@@ -14,12 +14,22 @@ import engine
 REPOSITORY = "OnurByte/OmaMonero"
 MAX_ARCHIVE_BYTES = 25 * 1024 * 1024
 MAX_CONTENT_BYTES = 100 * 1024 * 1024
+# Archive digest and source commit are reviewed together with this installer.
+PINNED_RELEASES = {
+    "0.3.6": (
+        "ecd79f25b119cd108e384994c11d06206fd5d5399f5eff13ef407b2bc7ef0ec5",
+        "c8294523a79c18f81bd7318107acc543679379cd",
+    ),
+}
 
 
 def download_verified_release(version: str, directory: Path, opener=urlopen) -> Path:
     """Download, hash-check and safely extract the exact plugin version."""
     if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
         raise engine.InstallError("Invalid plugin release version.")
+    if version not in PINNED_RELEASES:
+        raise engine.InstallError("No reviewed prebuilt release is pinned for this plugin version.")
+    expected_digest, expected_commit = PINNED_RELEASES[version]
     if engine.machine() != "x86_64":
         raise engine.InstallError("No prebuilt OmaMonero release is available for this processor.")
     tag = "v" + version
@@ -34,6 +44,8 @@ def download_verified_release(version: str, directory: Path, opener=urlopen) -> 
             metadata = json.loads(response.read(512 * 1024 + 1))
         if metadata.get("tag_name") != tag:
             raise engine.InstallError("GitHub returned a different release version.")
+        if metadata.get("target_commitish") != expected_commit:
+            raise engine.InstallError("The GitHub release source commit does not match the reviewed source.")
         assets = [asset for asset in metadata.get("assets", []) if asset.get("name") == filename]
         if len(assets) != 1 or assets[0].get("browser_download_url") != download_url:
             raise engine.InstallError("The matching prebuilt release is not published yet.")
@@ -41,6 +53,8 @@ def download_verified_release(version: str, directory: Path, opener=urlopen) -> 
         digest = asset.get("digest", "")
         if not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
             raise engine.InstallError("The release has no valid SHA-256 digest.")
+        if digest[7:] != expected_digest:
+            raise engine.InstallError("The published release digest differs from the reviewed archive.")
         if not isinstance(asset.get("size"), int) or not (0 < asset["size"] <= MAX_ARCHIVE_BYTES):
             raise engine.InstallError("The release archive size is invalid.")
         archive_path = directory / filename

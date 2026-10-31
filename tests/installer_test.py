@@ -215,14 +215,22 @@ class NativeBootstrapTests(unittest.TestCase):
    engine.git(runner,paths.plugin,'init','--quiet','--template=')
    engine.git(runner,paths.plugin,'remote','add','origin','https://github.com/OnurByte/OmaMonero.git')
    (paths.plugin/'manifest.json').write_bytes((bundle/'payload/plugin/manifest.json').read_bytes())
+   (paths.plugin/'installer').mkdir()
+   for name in ('engine.py','control.py','release_fetch.py'):
+    (paths.plugin/'installer'/name).write_bytes((Path(engine.__file__).parent/name).read_bytes())
    engine.git(runner,paths.plugin,'add','--all');engine.git(runner,paths.plugin,'commit','--quiet','-m','official source')
    original=engine.git(runner,paths.plugin,'rev-parse','HEAD').stdout.strip()
+   (bundle/'installer/release_fetch.py').write_text('# older release installer\n')
+   metadata=json.loads((bundle/'bundle.json').read_text())
+   metadata['files']['installer/release_fetch.py']=hashlib.sha256((bundle/'installer/release_fetch.py').read_bytes()).hexdigest()
+   (bundle/'bundle.json').write_text(json.dumps(metadata))
    from contextlib import nullcontext
    with patch('engine.os.geteuid',return_value=1000),patch('engine.reject_symlinks'),patch('engine.operation_lock',return_value=nullcontext()):
     engine.install(bundle,paths,False,runner=runner)
    self.assertEqual(engine.git(runner,paths.plugin,'rev-parse','HEAD').stdout.strip(),original)
    self.assertEqual(engine.git(runner,paths.plugin,'remote','get-url','origin').stdout.strip(),'https://github.com/OnurByte/OmaMonero.git')
    self.assertFalse(paths.source.exists())
+   self.assertEqual((paths.data/'installer/release_fetch.py').read_bytes(),(paths.plugin/'installer/release_fetch.py').read_bytes())
    self.assertNotIn(['omarchy','plugin','update',engine.PLUGIN_ID,'--yes'],runner.calls)
 
 if __name__=='__main__':unittest.main()
