@@ -23,15 +23,57 @@ QtObject {
     property var setupData: ({})
     property var paymentData: ({})
     property var incomingRequests: []
+    property string pendingRequestId: ""
+    property string pendingRequestAction: ""
+    property string pendingRequestHelper: ""
+    property int requestSerial: 0
+    readonly property string requestPrefix: runtimeDirectory ? runtimeDirectory + "/omamonero-request-" : ""
+    property FileView requestFile: FileView {
+        path: root.pendingRequestId !== "" ? root.requestPrefix + root.pendingRequestId + ".json" : ""
+        atomicWrites: true
+        blockWrites: true
+        preload: false
+        printErrors: false
+        onSaved: {
+            const id = root.pendingRequestId
+            const action = root.pendingRequestAction
+            const helper = root.pendingRequestHelper
+            root.pendingRequestId = ""
+            root.pendingRequestAction = ""
+            root.pendingRequestHelper = ""
+            if (id !== "" && action !== "") Quickshell.execDetached(["/usr/bin/python3", helper, action, "--request-id", id])
+        }
+        onSaveFailed: {
+            root.pendingRequestId = ""
+            root.pendingRequestAction = ""
+            root.pendingRequestHelper = ""
+            root.setup = {state: "error", message: "Private request could not be saved."}
+        }
+    }
     function command(action, endpoint, marketEnabled, payload) {
         if (!controlsAvailable || ["info", "install", "save", "diagnostics", "remove", "receive", "preview-uri", "wallet", "register-uri", "module-config", "proof"].indexOf(action) < 0 || (setup.state === "running" && action !== "info")) return
         if (["receive", "preview-uri"].indexOf(action) >= 0) paymentData = ({})
-        var helper = pendingSetup ? dataDirectory + "/pending/installer/control.py" : installedControls ? dataDirectory + "/installer/control.py" : pluginControl
-        var args = ["/usr/bin/python3", helper, action]
-        if (action === "save" || action === "install") args = args.concat(["--endpoint", endpoint || "http://127.0.0.1:18081", "--market", marketEnabled ? "true" : "false"])
-        if (payload) args = args.concat(["--payload", JSON.stringify(payload)])
-        // Explicit user action only; survives plugin reload/removal. No polling process.
-        Quickshell.execDetached(args)
+        // Prefer the updated plugin helper over an installed copy from an older release.
+        var helper = pluginControls ? pluginControl : installedControls ? dataDirectory + "/installer/control.py" : dataDirectory + "/pending/installer/control.py"
+        if (["install", "save", "receive", "preview-uri", "wallet", "module-config", "proof"].indexOf(action) < 0) {
+            Quickshell.execDetached(["/usr/bin/python3", helper, action])
+            return
+        }
+        if (pendingRequestId !== "" || requestPrefix === "") {
+            setup = {state: "error", message: "Private request transport is unavailable."}
+            return
+        }
+        // Only an opaque identifier enters argv; values stay in the owner's runtime directory.
+        const id = Qt.md5(Date.now() + ":" + (++requestSerial) + ":" + Math.random())
+        const request = JSON.stringify({endpoint: endpoint || null, market_enabled: marketEnabled === true, payload: payload || {}})
+        if (request.length > 16384) {
+            setup = {state: "error", message: "Request is too large."}
+            return
+        }
+        pendingRequestHelper = helper
+        pendingRequestAction = action
+        pendingRequestId = id
+        requestFile.setText(request)
     }
     function refresh() {
         if (statusPath !== "") { file.reload(); setupFile.reload(); paymentFile.reload(); incomingFile.reload() }
