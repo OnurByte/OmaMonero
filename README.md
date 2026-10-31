@@ -22,6 +22,8 @@ rises green and flat movement gray; the XMR label stays white.
 omarchy plugin add https://github.com/OnurByte/OmaMonero.git --enable
 ```
 
+> The old standalone `install.sh` and `v0.3.2` release bundle are retired. Do not use that bundle: its private payment requests could appear in process listings.
+
 Click **XMR → Settings → Install OmaMonero** in your Omarchy bar. The panel downloads the matching prebuilt backend from GitHub, verifies its SHA-256 and asks whether to enable public prices. No `sudo` or Rust compiler is needed. Linux x86_64 only.
 
 ## Features
