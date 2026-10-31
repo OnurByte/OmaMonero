@@ -44,7 +44,7 @@ On Omarchy x86_64, paste this complete block as one shell command. It downloads 
   trap 'rm -f -- "$installer"' EXIT
   curl -fsSL --proto '=https' --tlsv1.2 \
     https://raw.githubusercontent.com/OnurByte/OmaMonero/main/install.sh -o "$installer"
-  printf '%s  %s\n' 'def28a775032b29288ec93be4e89307956d5f9928a88d763201ddf07d11068e0' "$installer" | sha256sum --check --status
+  printf '%s  %s\n' 'd61fc48b035dc4dca4cd2baa6237dc8d97ab0d3bf618b1d04a94746344786104' "$installer" | sha256sum --check --status
   bash "$installer"
 )
 ```

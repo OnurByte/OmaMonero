@@ -4,7 +4,7 @@ set -Eeuo pipefail
 REPOSITORY="OnurByte/OmaMonero"
 ASSET="omamonero-linux-x86_64.tar.gz"
 RELEASE_TAG="v0.3.2"
-# The reviewed v0.3.2 release is built from 004c7620a0bfdd2bdc4969a738acfed654b7157e.
+# GitHub currently points the v0.3.2 release at 004c7620a0bfdd2bdc4969a738acfed654b7157e; this does not prove build provenance.
 # Update the tag and independently reviewed archive digest together for each release.
 EXPECTED_SHA256="b1ea936ff1a0edb254f615f2dc02d3fb9ac61722e40c7a053100d87dba3fff3b"
 RELEASE_URL="https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}"
