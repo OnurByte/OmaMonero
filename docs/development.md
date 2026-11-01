@@ -14,4 +14,4 @@ Users install with the graphical Omarchy plugin manager. The commands here are o
 - `python3 scripts/validate-plugin.py`: official local validator; does not confer marketplace verification.
 - `python3 scripts/package.py`: deterministic plugin archive, including committed JS and runtime integrations. No binary bundle or installer.
 
-After editing TypeScript, rebuild and commit `qml/v0_4_1/generated/Core.js`. CI checks reproducibility. Dependencies are pinned in `package-lock.json`. Crypto uses the MIT-licensed js-sha3 Keccak implementation; Monero Base58 is block-oriented byte arithmetic, avoiding BigInt unavailable in QML. QR generation uses qrcode-generator; public address/network/checksum tests cover standard, integrated and subaddresses.
+After editing TypeScript, rebuild and commit `qml/v0_4_2/generated/Core.js`. CI checks reproducibility. Dependencies are pinned in `package-lock.json`. Crypto uses the MIT-licensed js-sha3 Keccak implementation; Monero Base58 is block-oriented byte arithmetic, avoiding BigInt unavailable in QML. QR generation uses qrcode-generator; public address/network/checksum tests cover standard, integrated and subaddresses.

@@ -30,7 +30,7 @@ with tempfile.TemporaryDirectory(prefix='omamonero-manager-') as folder:
         (shell/'services').mkdir();(shell/'plugins').mkdir();shutil.copy(omarchy/'shell/services/PluginRegistry.qml',shell/'services/PluginRegistry.qml');shutil.copy(root/'tests/qml/lifecycle.qml',shell/'shell.qml')
         config=home/'.config/omamonero';config.mkdir(parents=True,mode=0o700)
         if migration:(config/'config.toml').write_text('endpoint="http://127.0.0.1:1"\nmarket_enabled=false\nnetwork="stagenet"\ntransport="local"\n')
-        else:(config/'config.json').write_text(json.dumps(dict(endpoint='http://127.0.0.1:1')))
+        else:(config/'config.json').write_text(json.dumps(dict(endpoint='http://127.0.0.1:1',market_enabled=False)))
         display=os.environ.get('WAYLAND_DISPLAY','wayland-1')
         if not display.startswith('/'):display=str(Path(os.environ['XDG_RUNTIME_DIR'])/display)
         env=dict(os.environ,HOME=str(home),XDG_CONFIG_HOME=str(home/'.config'),XDG_DATA_HOME=str(home/'.local/share'),XDG_RUNTIME_DIR=str(session),OMARCHY_PATH=str(shell.parent),WAYLAND_DISPLAY=display,QT_QPA_PLATFORM='wayland',QT_LOGGING_RULES='qt.qml.usedbeforedeclared=false',PATH=str(omarchy/'bin')+':/usr/bin:/bin')
@@ -52,7 +52,7 @@ with tempfile.TemporaryDirectory(prefix='omamonero-manager-') as folder:
             log.flush();log.seek(0);raise AssertionError('Lifecycle observation timed out\n'+run('omarchy-shell','shell','widgetInfo')+'\n'+log.read())
         def widget_ready():
             data=json.loads(run('omarchy-shell','shell','widgetInfo'))
-            return data if data.get('ready') and data.get('view') and data['view'].get('privacy') and '/v0_4_1/' in data.get('source','') else None
+            return data if data.get('ready') and data.get('view') and data['view'].get('privacy') and '/v0_4_2/' in data.get('source','') else None
         try:
             eventually(lambda:run('omarchy-shell','shell','ping')=='ok')
             run('omarchy','plugin','add',str(upstream) if migration or not args.source_url else args.source_url,*([] if args.working_frontend else ['--enable']),'--yes')

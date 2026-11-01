@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
-FRONT=ROOT/'qml/v0_4_1'
+FRONT=ROOT/'qml/v0_4_2'
 class NativeTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.base=Path(self.tmp.name);self.home=self.base/'home';self.home.mkdir();self.runtime=self.base/'runtime';self.runtime.mkdir(mode=0o700);self.bin=self.base/'bin';self.bin.mkdir()

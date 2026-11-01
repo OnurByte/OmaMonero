@@ -11,12 +11,14 @@ QtObject {
     property var config: core.defaults()
     property double now: Date.now() / 1000
     property var nodeData: ({state:"offline",error:"connection"})
-    property var marketData: ({state:"disabled"})
+    property var marketData: ({state:"loading"})
     property var modulesData: ({wallet:{state:"disabled"},xmrig:{state:"disabled"},p2pool:{state:"disabled"}})
     property int nodeTime: 0
     property int epoch: 0
     property bool polling: false
     property double lastMarket: 0
+    property int chartIntervalSecs: 900
+    property bool marketBusy: false
     property bool ready: false
     property bool configLoaded: false
     property bool configError: false
@@ -81,8 +83,26 @@ QtObject {
             })
         })
     }
-    function refresh() {
-        if(!ready || !configLoaded || configError || polling) return
+    function selectChartInterval(seconds) {
+        if(marketBusy || config.market_source.url || [300,900,1800,3600].indexOf(seconds)<0)return
+        chartIntervalSecs=seconds
+        refresh(true)
+    }
+    function refreshMarket() {
+        if(config.market_enabled && !marketBusy && now-lastMarket>=120) {
+            lastMarket=now;marketBusy=true
+            if(marketData.state!=="ready")marketData={state:"loading"}
+            const source=config.market_source
+            const interval=chartIntervalSecs
+            const url=source.url || "https://api.kraken.com/0/public/OHLC?pair=XMRUSD&interval="+Math.round(interval/60)
+            request(url,undefined,{},false,function(v){marketBusy=false;try{marketData=source.url?core.customMarket(v,Math.floor(root.now),source):core.krakenMarket(v,Math.floor(root.now),interval)}catch(e){marketData={state:"unavailable"}}})
+        }
+    }
+    function refresh(forceMarket) {
+        if(forceMarket === true)lastMarket=0
+        if(!ready || !configLoaded || configError) return
+        refreshMarket()
+        if(polling)return
         polling=true
         const started=Date.now()
         request(config.endpoint+"/json_rpc","get_info",{},false,function(v) {
@@ -90,12 +110,6 @@ QtObject {
             nodeTime=Math.floor(root.now)
             pollWallet()
         })
-        if(config.market_enabled && now-lastMarket>=120) {
-            lastMarket=now
-            const source=config.market_source
-            const url=source.url || "https://api.kraken.com/0/public/OHLC?pair=XMRUSD&interval=60"
-            request(url,undefined,{},false,function(v){try{marketData=source.url?core.customMarket(v,Math.floor(root.now),source):core.krakenMarket(v,Math.floor(root.now))}catch(e){marketData={state:"unavailable"}}})
-        }
         if(config.modules.xmrig_url) request(config.modules.xmrig_url+"/2/summary",undefined,{},true,function(v){try{setModule("xmrig",core.xmrig(v,Math.floor(root.now)))}catch(e){setModule("xmrig",{state:"unavailable"})}})
         else setModule("xmrig",{state:"disabled"})
         if(config.modules.p2pool_directory && !poolReader.running){poolReader.generation=epoch;poolReader.output="";poolReader.command=["/bin/bash",helper,"p2pool",config.modules.p2pool_directory];poolReader.running=true}
@@ -103,7 +117,7 @@ QtObject {
     }
     function applyConfig(next) {
         const checked=core.validateConfig(next)
-        epoch++;http.cancel();poolReader.running=false;config=checked;configError=false;polling=false;lastMarket=0;nodeTime=0;nodeData={state:"offline",error:"connection"};marketData={state:config.market_enabled?"unavailable":"disabled"};modulesData={wallet:{state:"disabled"},xmrig:{state:"disabled"},p2pool:{state:"disabled"}};tracker=core.incomingTracker();setupData=Object.assign({},setupData,{proof:null});paymentData=({});incomingRequests=[]
+        epoch++;http.cancel();poolReader.running=false;config=checked;configError=false;polling=false;marketBusy=false;lastMarket=0;nodeTime=0;nodeData={state:"offline",error:"connection"};marketData={state:config.market_enabled?"unavailable":"disabled"};modulesData={wallet:{state:"disabled"},xmrig:{state:"disabled"},p2pool:{state:"disabled"}};tracker=core.incomingTracker();setupData=Object.assign({},setupData,{proof:null});paymentData=({});incomingRequests=[]
     }
     function save(next) {
         applyConfig(next)
@@ -116,6 +130,7 @@ QtObject {
         if(action==="proof" || action==="clear-proof")setupData=Object.assign({},setupData,{proof:null})
         try {
             if(action==="clear-proof" || action==="clear-payment")return
+            if(action==="market-enable"){save(Object.assign({},config,{market_enabled:true}));setup={state:"done"};return}
             if(action==="info")details()
             else if(action==="save")save(Object.assign({},config,{endpoint:endpoint,market_enabled:marketEnabled,market_source:payload.market_source || config.market_source,transport:payload.transport || config.transport,proxy:payload.proxy===undefined?config.proxy:payload.proxy,network:payload.network || config.network}))
             else if(action==="module-config")save(Object.assign({},config,{modules:payload}))
@@ -131,7 +146,7 @@ QtObject {
             }
             else if(action==="wallet") {if(["feather","monero_gui"].indexOf(payload.wallet)<0)return;Quickshell.execDetached(["/bin/bash",helper,"wallet",payload.wallet]);details("Wallet launch requested. If it is not installed, use Omarchy’s application manager.")}
             else if(action==="register-uri" || action==="remove" || action==="legacy-cleanup") {osAction(action);return}
-            else if(action==="diagnostics") {details("TypeScript core active in Quickshell. No OmaMonero backend or service required. Node and module checks are read-only. P2P route remains unverified.");refresh()}
+            else if(action==="diagnostics") {details("Refreshing read-only connections. No node is started.");refresh(true)}
             setup={state:"done"}
         } catch(e) {fail(e.message || "Action could not complete")}
     }
@@ -144,7 +159,7 @@ QtObject {
     }
     function loadConfig() {
         try {const next=core.validateConfig(JSON.parse(configFile.text()));if(JSON.stringify(next)!==JSON.stringify(config))applyConfig(next);configError=false;configLoaded=true;details(setupData.message);refresh();inbox.reload()}
-        catch(e){epoch++;http.cancel();poolReader.running=false;polling=false;nodeData={state:"offline",error:"invalid_response"};marketData={state:"unavailable"};modulesData={wallet:{state:"unavailable"},xmrig:{state:"unavailable"},p2pool:{state:"unavailable"}};configError=true;configLoaded=true;fail("Settings are invalid. Network requests are paused; correct the settings before saving.")}
+        catch(e){epoch++;http.cancel();poolReader.running=false;polling=false;marketBusy=false;nodeData={state:"offline",error:"invalid_response"};marketData={state:"unavailable"};modulesData={wallet:{state:"unavailable"},xmrig:{state:"unavailable"},p2pool:{state:"unavailable"}};configError=true;configLoaded=true;fail("Settings are invalid. Network requests are paused; correct the settings before saving.")}
     }
     property Http http: Http {}
     property Process initJob: Process {
@@ -152,7 +167,7 @@ QtObject {
         running:true
         stdout:StdioCollector {}
         stderr:StdioCollector {}
-        onExited:function(code){if(code!==0){root.fail("Private settings directory could not be prepared");return}root.ready=true;configFile.reload()}
+        onExited:function(code){if(code!==0){root.marketData={state:"unavailable"};root.fail("Private settings directory could not be prepared");return}root.ready=true;configFile.reload()}
     }
     property FileView configFile: FileView {
         path:root.configDirectory+"/config.json"
@@ -166,7 +181,7 @@ QtObject {
     property FileView legacyFile: FileView {
         path:root.configDirectory+"/config.toml"
         printErrors:false
-        onLoaded: {try{root.applyConfig(core.legacyConfig(text()));root.configLoaded=true;root.details("Previous settings loaded. Save to migrate; the old service is retained until you explicitly stop it.");root.refresh();inbox.reload()}catch(e){root.configError=true;root.configLoaded=true;root.fail("Previous settings could not be migrated safely. Network requests are paused until settings are saved.")}}
+        onLoaded: {try{root.applyConfig(core.legacyConfig(text()));root.configLoaded=true;root.details("Previous settings loaded. Save to migrate; the old service is retained until you explicitly stop it.");root.refresh();inbox.reload()}catch(e){root.marketData={state:"unavailable"};root.configError=true;root.configLoaded=true;root.fail("Previous settings could not be migrated safely. Network requests are paused until settings are saved.")}}
         onLoadFailed:{root.configLoaded=true;root.details();root.refresh();inbox.reload()}
     }
     property FileView uriOwnership: FileView {

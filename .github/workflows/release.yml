@@ -17,7 +17,7 @@ jobs:
           python-version: '3.12'
       - run: npm ci --ignore-scripts
       - run: npm run check
-      - run: git diff --exit-code -- qml/v0_4_1/generated/Core.js
+      - run: git diff --exit-code -- qml/v0_4_2/generated/Core.js
       - run: node --test tests/status.test.cjs
       - run: python3 -m unittest discover -s tests -p '*_test.py'
       - run: python3 scripts/check-contract.py

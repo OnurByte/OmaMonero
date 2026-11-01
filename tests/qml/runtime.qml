@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import qs.Commons
 import "Plugin" as Oma
 import "Plugin/components" as Components
 QtObject {
@@ -8,12 +9,28 @@ QtObject {
     property int stage: 0
     property Item widget: Oma.BarWidget {}
     property Item panelCheck: Oma.Panel {}
+    property Item trading: Components.TradingChart {
+        width:600;height:300
+        candles:Array.from({length:120},function(_,i){return {timestamp:100000+i*900,open:100+i,high:102+i,low:99+i,close:101+i,volume:10+i,complete:i<119}})
+        currentPrice:220
+    }
+    property Item navigation: Components.PanelNavigation {width:Style.space(430)}
+    property Item settings: Components.SetupPage {width:Style.space(430);available:true}
     property Item chart: Components.Sparkline {width:300;height:180;detailed:true;axisLow:575;axisHigh:636;points:[{timestamp:1,price:575},{timestamp:2,price:636}]}
     property Timer check: Timer {
         interval:100;running:true;repeat:true
         onTriggered: {
             ticks++
             const s=Oma.StatusStore
+            if(ticks===3){
+                if(trading.windowData.count!==97 || !trading.axesFit){console.error("OMAMONERO_RUNTIME_FAIL: candle viewport");Qt.quit();return}
+                trading.zoom(.5,.5)
+                if(trading.windowData.count>=97 || trading.windowData.offset<=0){console.error("OMAMONERO_RUNTIME_FAIL: zoom anchoring");Qt.quit();return}
+                trading.pan(10000)
+                if(trading.windowData.startIndex!==0){console.error("OMAMONERO_RUNTIME_FAIL: pan bounds");Qt.quit();return}
+                trading.resetView()
+            }
+            if(ticks===2 && (navigation.tabs.length!==3 || navigation.implicitWidth>navigation.width || settings.advancedOpen || settings.maintenanceOpen)){console.error("OMAMONERO_RUNTIME_FAIL: primary hierarchy/disclosure",navigation.tabs.length,navigation.implicitWidth,navigation.width,settings.advancedOpen,settings.maintenanceOpen,panelCheck.page);Qt.quit();return}
             if(stage===0 && s.view.state==="online" && s.modulesData.wallet.state==="ready" && s.modulesData.wallet.incoming.length===1 && s.modulesData.xmrig.state==="ready" && s.modulesData.p2pool.state==="ready") {
                 if(s.modulesData.wallet.balance_atomic!=="18446744073709551615"){console.error("OMAMONERO_RUNTIME_FAIL: Atomic precision lost");Qt.quit();return}
                 s.command("receive",undefined,undefined,{address:s.modulesData.wallet.address,amount:"1.250000000000",label:"Invoice #1"})

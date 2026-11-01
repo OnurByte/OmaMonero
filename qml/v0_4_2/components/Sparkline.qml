@@ -72,6 +72,8 @@ Item {
                 ctx.beginPath(); ctx.moveTo(2, y); ctx.lineTo(root.plotRight, y)
                 ctx.strokeStyle = Qt.alpha(Commons.Color.foreground, 0.12); ctx.lineWidth = 1; ctx.stroke()
             }
+            ctx.fillStyle = String(Commons.Color.foreground)
+            ctx.font = root.typography.bodySmall + "px " + root.typography.family
             ctx.textBaseline = "bottom"
             for (var t = 0; t <= 2; t++) {
                 var stamp = start + duration * t / 2
