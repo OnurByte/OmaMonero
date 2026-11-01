@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Official manager + actual Omarchy registry in an isolated non-visual Wayland engine."""
+import argparse
 import json
 import os
 from pathlib import Path
@@ -8,6 +9,9 @@ import subprocess
 import tempfile
 import time
 
+parser=argparse.ArgumentParser()
+parser.add_argument('--source-url',help='Use this published source for the fresh-install case')
+args=parser.parse_args()
 root=Path(__file__).resolve().parents[1]
 id='io.github.onurbyte.omamonero'
 omarchy=Path(os.environ.get('OMARCHY_PATH','/usr/share/omarchy'))
@@ -49,7 +53,7 @@ with tempfile.TemporaryDirectory(prefix='omamonero-manager-') as folder:
             return data if data.get('view') and data['view'].get('privacy') and '/v0_4_0/' in data.get('source','') else None
         try:
             eventually(lambda:run('omarchy-shell','shell','ping')=='ok')
-            run('omarchy','plugin','add',str(upstream),'--enable','--yes')
+            run('omarchy','plugin','add',str(upstream) if migration or not args.source_url else args.source_url,'--enable','--yes')
             installed=home/'.config/omarchy/plugins'/id
             eventually(lambda:json.loads(run('omarchy','plugin','list','--json'))[0]['enabled'])
             if migration:
