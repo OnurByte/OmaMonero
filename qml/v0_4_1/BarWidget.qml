@@ -12,6 +12,8 @@ Ui.BarWidget {
     property var manifest: null
     property var pluginRegistry: null
     property var barWidgetRegistry: null
+    readonly property string nodeLabel: view.state === "online" ? "Online" : view.state === "syncing" ? "Syncing" : view.state === "offline" ? "Offline" : view.state === "stale" ? "Stale" : "Unavailable"
+    readonly property bool ready: StatusStore.ready && StatusStore.configLoaded && !StatusStore.configError
     readonly property var view: StatusStore.view
     readonly property var market: view.market
     readonly property bool marketReady: market.state === "ready"
@@ -35,7 +37,7 @@ Ui.BarWidget {
         id: button
         anchors.fill: parent
         bar: root.bar
-        text: root.vertical ? "$XMR" : root.marketReady ? "$XMR $" + root.market.price.toFixed(2) + " " + Status.changeLabel(root.market.change_percent) : "$XMR · " + (root.view.state === "online" ? "Online" : root.view.state === "syncing" ? "Syncing" : root.view.state === "offline" ? "Offline" : root.view.state === "stale" ? "Stale" : root.view.state === "stopped" ? "Stopped" : "Error")
+        text: root.vertical ? "$XMR" : root.marketReady ? "$XMR $" + root.market.price.toFixed(2) + " " + Status.changeLabel(root.market.change_percent) : "$XMR · " + root.nodeLabel
         tooltipText: root.view.message + (root.marketReady ? " · " + root.market.source + " XMR/USD · 24h " + Status.changeLabel(root.market.change_percent) : "")
         labelVisible: false
         Image {
@@ -72,7 +74,7 @@ Ui.BarWidget {
             }
             Text {
                 visible: !root.vertical
-                text: root.marketReady ? "$" + root.market.price.toFixed(2) + " " + Status.changeLabel(root.market.change_percent) : root.view.message
+                text: root.marketReady ? "$" + root.market.price.toFixed(2) + " " + Status.changeLabel(root.market.change_percent) : root.nodeLabel
                 textFormat: Text.PlainText
                 font.family: button.fontFamily
                 font.pixelSize: button.fontSize

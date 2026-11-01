@@ -2417,6 +2417,7 @@ var OmaCore = (() => {
     legacyConfig: () => legacyConfig,
     localOrigin: () => localOrigin,
     loopback: () => loopback,
+    nativePath: () => nativePath,
     node: () => node,
     origin: () => origin,
     p2pool: () => p2pool,
@@ -2520,6 +2521,12 @@ var OmaCore = (() => {
     const split = raw.lastIndexOf("\n");
     ensure(split >= 0 && /^2[0-9]{2}$/.test(raw.slice(split + 1)), "HTTP request failed");
     return parseJson(raw.slice(0, split));
+  }
+  function nativePath(url) {
+    ensure(typeof url === "string" && /^(?:file|qs):\//.test(url), "Unsupported local helper URL");
+    const path = decodeURIComponent(url.replace(/^(?:file|qs):(?:\/\/)?/, ""));
+    ensure(path.startsWith("/") && !/[\x00-\x1f\x7f]/.test(path), "Invalid local helper path");
+    return path;
   }
 
   // src/core/payments.ts
@@ -3215,7 +3222,7 @@ ${codeblock}`, options);
       TomlError.x("unfinished numeric value", ctx, startPtr);
     let str = ctx.s.slice(startPtr, ctx.p);
     if (hasUnderscores)
-      str = str.replaceAll("_", "");
+      str = str.replace(/_/g, "");
     return state > 1 ? parseFloat(str) : parseInteger(ctx, str, 10, startPtr);
   }
   function parseIntegerBaseN(ctx, startPtr, base, endChr) {
@@ -3234,7 +3241,7 @@ ${codeblock}`, options);
       TomlError.x("unfinished numeric value", ctx);
     let str = ctx.s.slice(startPtr + 2, ctx.p);
     if (underscore)
-      str = str.replaceAll("_", "");
+      str = str.replace(/_/g, "");
     return parseInteger(ctx, str, base, startPtr);
   }
   function parseInteger(ctx, str, base, startPtr) {
@@ -3460,7 +3467,7 @@ ${codeblock}`, options);
         if (i)
           t = hasOwn ? t[k] : t[k] = /* @__PURE__ */ Object.create(null);
         k = key[i];
-        if ((hasOwn = Object.hasOwn(t, k)) && (typeof t[k] !== "object" || seen.has(t[k]))) {
+        if ((hasOwn = Object.prototype.hasOwnProperty.call(t, k)) && (typeof t[k] !== "object" || seen.has(t[k]))) {
           TomlError.x("trying to redefine an already defined value", ctx, errPtr);
         }
         let unsafe = k === "__proto__";
@@ -3566,7 +3573,7 @@ ${codeblock}`, options);
         }
       }
       k = key[i];
-      if ((hasOwn = Object.hasOwn(t, k)) && ((_a = m[k]) == null ? void 0 : _a.t) === 0 && ((_b = m[k]) == null ? void 0 : _b.d)) {
+      if ((hasOwn = Object.prototype.hasOwnProperty.call(t, k)) && ((_a = m[k]) == null ? void 0 : _a.t) === 0 && ((_b = m[k]) == null ? void 0 : _b.d)) {
         return null;
       }
       if (!hasOwn) {

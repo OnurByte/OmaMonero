@@ -52,3 +52,9 @@ export function parseJson(raw:string):Dict {
 }
 export function rpcResult(v:Dict) {ensure(v.jsonrpc==='2.0' && v.id==='omamonero' && !v.error && v.result && typeof v.result==='object');return v.result as Dict;}
 export function httpBody(raw:string):Dict {const split=raw.lastIndexOf('\n');ensure(split>=0 && /^2[0-9]{2}$/.test(raw.slice(split+1)), 'HTTP request failed');return parseJson(raw.slice(0,split));}
+export function nativePath(url:string):string {
+    ensure(typeof url==='string' && /^(?:file|qs):\//.test(url),'Unsupported local helper URL');
+    const path=decodeURIComponent(url.replace(/^(?:file|qs):(?:\/\/)?/,''));
+    ensure(path.startsWith('/') && !/[\x00-\x1f\x7f]/.test(path),'Invalid local helper path');
+    return path;
+}

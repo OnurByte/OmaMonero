@@ -1,6 +1,6 @@
 # 0.4 architecture
 
-Omarchy loads `qml/v0_4_0/BarWidget.qml`, the existing qs.Ui panel and one `StatusStore` singleton per engine. `src/core` contains strict TypeScript modules for privacy/configuration, transport, market, node, wallet/mining and payments. esbuild emits the committed `generated/Core.js` bundle as a QML library. End users do not build it.
+Omarchy loads `qml/v0_4_1/BarWidget.qml`, the existing qs.Ui panel and one `StatusStore` singleton per engine. `src/core` contains strict TypeScript modules for privacy/configuration, transport, market, node, wallet/mining and payments. esbuild emits the committed `generated/Core.js` bundle as a QML library. End users do not build it.
 
 `Http.qml` starts a short-lived system curl process for each queued request. Configuration and RPC bodies travel over stdin, never argv. curlrc and ambient proxies are bypassed; explicit SOCKS5h has remote DNS and an empty no-proxy list. Redirects and non-2xx responses fail. Responses have a time/size limit. There is no listener, daemon, installed backend binary or background systemd unit.
 

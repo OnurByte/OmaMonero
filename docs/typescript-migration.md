@@ -24,3 +24,6 @@ Implementation complete locally:
 Ruling: Do not modify the user's active plugin/service to simulate a clean installation. Use an isolated real Qt/Wayland engine and the exact packaged archive; actual published-commit manager installation remains a release acceptance check. Cost if wrong: a lifecycle problem may only surface in that final clean installation test.
 
 External remaining work: publish the reviewed commit, clean official-manager installation/update against it, submit for marketplace review and record its real decision. No marketplace status was invented. See publication.md and verification-0.4.0.md.
+
+
+0.4.1 correction: live installation revealed `qs:` resource URLs were not converted for the native helper. Added explicit local URL conversion and readiness assertions, retained the versioned QML directory to invalidate old engine caches, and kept offline bar text compact. Earlier widget-presence-only lifecycle evidence is insufficient for helper readiness; the correction is documented in verification-0.4.1.md.
