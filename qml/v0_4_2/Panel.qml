@@ -162,11 +162,11 @@ Ui.Panel {
                         }
                         Ui.Button {
                             Layout.fillWidth: !root.view.market || root.view.market.state !== "ready"
-                            text: root.view.market.state === "disabled" ? "Resume prices" : root.view.market.state === "loading" ? "Loading prices…" : root.view.market.state === "ready" ? "Refresh" : "Try again"
+                            text: StatusStore.configError ? "Open settings" : root.view.market.state === "disabled" ? "Resume prices" : root.view.market.state === "loading" ? "Loading prices…" : root.view.market.state === "ready" ? "Refresh" : "Try again"
                             enabled: StatusStore.controlsAvailable && !root.busy && root.view.market.state !== "loading"
                             bordered: root.view.market.state !== "ready"
                             focusable: true
-                            onClicked: { if(root.view.market.state === "disabled")StatusStore.command("market-enable");else StatusStore.refresh(true) }
+                            onClicked: { if(StatusStore.configError)root.showSettings(true);else if(root.view.market.state === "disabled")StatusStore.command("market-enable");else StatusStore.refresh(true) }
                         }
                     }
                     ColumnLayout {

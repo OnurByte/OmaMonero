@@ -2406,6 +2406,7 @@ var OmaCore = (() => {
   // src/core/index.ts
   var index_exports = {};
   __export(index_exports, {
+    anchoredChartOffset: () => anchoredChartOffset,
     atomic: () => atomic,
     chartWindow: () => chartWindow,
     chartZoom: () => chartZoom,
@@ -3800,6 +3801,18 @@ ${codeblock}`, options);
     const point = length - old.offset - old.count + (old.count - 1) * a;
     const start = Math.max(0, Math.min(length - next.count, Math.round(point - (next.count - 1) * a)));
     return { count: next.count, offset: length - start - next.count };
+  }
+  function anchoredChartOffset(series, count, timestamp) {
+    const b = bounded(series.length, count, 0);
+    if (!series.length || !Number.isFinite(timestamp)) return 0;
+    let index = 0;
+    for (let i = series.length - 1; i >= 0; i--) {
+      if (series[i].timestamp <= timestamp) {
+        index = i;
+        break;
+      }
+    }
+    return Math.max(0, Math.min(series.length - b.count, series.length - 1 - index));
   }
   return __toCommonJS(index_exports);
 })();

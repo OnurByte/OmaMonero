@@ -22,6 +22,8 @@ QtObject {
     property bool ready: false
     property bool configLoaded: false
     property bool configError: false
+    property bool jsonSeen: false
+    property bool legacySeen: false
     readonly property bool pendingSetup: false
     readonly property bool controlsAvailable: ready
     property var setup: ({state:"idle"})
@@ -117,7 +119,8 @@ QtObject {
     }
     function applyConfig(next) {
         const checked=core.validateConfig(next)
-        epoch++;http.cancel();poolReader.running=false;config=checked;configError=false;polling=false;marketBusy=false;lastMarket=0;nodeTime=0;nodeData={state:"offline",error:"connection"};marketData={state:config.market_enabled?"unavailable":"disabled"};modulesData={wallet:{state:"disabled"},xmrig:{state:"disabled"},p2pool:{state:"disabled"}};tracker=core.incomingTracker();setupData=Object.assign({},setupData,{proof:null});paymentData=({});incomingRequests=[]
+        const revalidateIncoming=!configLoaded || config.network!==checked.network
+        epoch++;http.cancel();poolReader.running=false;config=checked;configError=false;polling=false;marketBusy=false;lastMarket=0;nodeTime=0;nodeData={state:"offline",error:"connection"};marketData={state:config.market_enabled?"unavailable":"disabled"};modulesData={wallet:{state:"disabled"},xmrig:{state:"disabled"},p2pool:{state:"disabled"}};tracker=core.incomingTracker();setupData=Object.assign({},setupData,{proof:null});paymentData=({});if(revalidateIncoming)incomingRequests=[]
     }
     function save(next) {
         applyConfig(next)
@@ -157,9 +160,17 @@ QtObject {
         actionJob.command=["/bin/bash",helper,action].concat(arg?[arg]:[])
         actionJob.running=true
     }
+    function invalidateConfig(message) {
+        epoch++;http.cancel();poolReader.running=false;polling=false;marketBusy=false
+        nodeData={state:"offline",error:"invalid_response"};marketData={state:"unavailable"}
+        modulesData={wallet:{state:"unavailable"},xmrig:{state:"unavailable"},p2pool:{state:"unavailable"}}
+        configError=true;configLoaded=true
+        fail(message)
+    }
     function loadConfig() {
-        try {const next=core.validateConfig(JSON.parse(configFile.text()));if(JSON.stringify(next)!==JSON.stringify(config))applyConfig(next);configError=false;configLoaded=true;details(setupData.message);refresh();inbox.reload()}
-        catch(e){epoch++;http.cancel();poolReader.running=false;polling=false;marketBusy=false;nodeData={state:"offline",error:"invalid_response"};marketData={state:"unavailable"};modulesData={wallet:{state:"unavailable"},xmrig:{state:"unavailable"},p2pool:{state:"unavailable"}};configError=true;configLoaded=true;fail("Settings are invalid. Network requests are paused; correct the settings before saving.")}
+        jsonSeen=true
+        try {const next=core.validateConfig(JSON.parse(configFile.text()));if(JSON.stringify(next)!==JSON.stringify(config))applyConfig(next);configError=false;configLoaded=true;details(setupData.message);refresh();refreshInbox()}
+        catch(e){invalidateConfig("Settings are invalid. Requests are paused; correct the settings before saving.")}
     }
     property Http http: Http {}
     property Process initJob: Process {
@@ -167,22 +178,29 @@ QtObject {
         running:true
         stdout:StdioCollector {}
         stderr:StdioCollector {}
-        onExited:function(code){if(code!==0){root.marketData={state:"unavailable"};root.fail("Private settings directory could not be prepared");return}root.ready=true;configFile.reload()}
+        onExited:function(code){if(code!==0){root.marketData={state:"unavailable"};root.fail("Private settings directory could not be prepared");return}root.ready=true;configFile.reload();configFile.text()}
     }
     property FileView configFile: FileView {
         path:root.configDirectory+"/config.json"
-        printErrors:false;watchChanges:true
+        printErrors:false;watchChanges:true;preload:false
         onLoaded:root.loadConfig()
         onFileChanged:reload()
-        onLoadFailed: {if(root.ready){legacyFile.reload()}}
+        onLoadFailed:function(error) {
+            if(!root.ready)return
+            if(error===FileViewError.FileNotFound && !root.jsonSeen){legacyFile.reload();legacyFile.text()}
+            else root.invalidateConfig("Saved settings could not be read. Requests are paused to protect your connection policy.")
+        }
         onSaved:root.details("Settings saved.")
         onSaveFailed:root.fail("Settings could not be saved. Your previous file was retained.")
     }
     property FileView legacyFile: FileView {
         path:root.configDirectory+"/config.toml"
-        printErrors:false
-        onLoaded: {try{root.applyConfig(core.legacyConfig(text()));root.configLoaded=true;root.details("Previous settings loaded. Save to migrate; the old service is retained until you explicitly stop it.");root.refresh();inbox.reload()}catch(e){root.marketData={state:"unavailable"};root.configError=true;root.configLoaded=true;root.fail("Previous settings could not be migrated safely. Network requests are paused until settings are saved.")}}
-        onLoadFailed:{root.configLoaded=true;root.details();root.refresh();inbox.reload()}
+        printErrors:false;preload:false
+        onLoaded: {root.legacySeen=true;try{root.applyConfig(core.legacyConfig(text()));root.configLoaded=true;root.details("Previous settings loaded. Save to migrate; the old service is retained until you explicitly stop it.");root.refresh();refreshInbox()}catch(e){root.invalidateConfig("Previous settings could not be migrated safely. Requests are paused until settings are saved.")}}
+        onLoadFailed:function(error) {
+            if(error===FileViewError.FileNotFound && !root.legacySeen){root.configLoaded=true;root.details();root.refresh();root.refreshInbox()}
+            else root.invalidateConfig("Previous settings could not be read. Requests are paused to protect your connection policy.")
+        }
     }
     property FileView uriOwnership: FileView {
         path:root.dataDirectory+"/native/uri-owned";printErrors:false;preload:true;watchChanges:true
@@ -194,17 +212,23 @@ QtObject {
         path:root.configDirectory+"/receive.json";printErrors:false;preload:true
         onLoaded:{try{root.setupData=Object.assign({},root.setupData,{receive_address:JSON.parse(text()).address || ""})}catch(e){}}
     }
-    property FileView inbox: FileView {
-        path:root.runtimeDirectory+"/inbox";printErrors:false;preload:true;watchChanges:true
-        onFileChanged:reload()
-        onLoaded: {
-            const rows=text().split("\n").filter(function(s){return !!s}).slice(-20), requests=[]
+    function refreshInbox() {
+        inbox.reload()
+        if(inbox.loaded)readInbox(inbox.text())
+    }
+    function readInbox(raw) {
+            const rows=raw.split("\n").filter(function(s){return !!s}).slice(-20), requests=[]
             for(let i=0;i<rows.length;i++) {const tab=rows[i].indexOf("\t");if(tab<1)continue;try{const p=core.payment({uri:rows[i].slice(tab+1)},root.config.network);p.incoming_request=true;p.request_id=rows[i].slice(0,tab);requests.push({id:p.request_id,created_at:Number(p.request_id)/1e9,payment:p})}catch(e){}}
             const previous=root.incomingRequests.length?root.incomingRequests[root.incomingRequests.length-1].id:""
             root.incomingRequests=requests
             if(requests.length && requests[requests.length-1].id!==previous)root.paymentData=requests[requests.length-1].payment
-        }
     }
+    property FileView inbox: FileView {
+        path:root.runtimeDirectory+"/inbox";printErrors:false;preload:true;watchChanges:true
+        onFileChanged:reload()
+        onLoaded:root.readInbox(text())
+    }
+
     property Process actionJob: Process {
         property string action:""
         stdout:StdioCollector {}

@@ -19,6 +19,7 @@ ColumnLayout {
     property bool advancedOpen: false
     property bool maintenanceOpen: false
     property bool useCustomSource: false
+    property string formError: ""
     property bool confirmLegacy: false
     property bool confirmingRemoval: false
     readonly property var typography: Style.font
@@ -27,6 +28,15 @@ ColumnLayout {
     signal removeRequested()
     signal legacyCleanupRequested()
     signal closeRequested()
+    function submit() {
+        formError=""
+        if(useCustomSource && (!marketSource.url || !/^https:\/\//.test(marketSource.url.trim()))){
+            formError="Enter an HTTPS address for your custom source, or switch it off."
+            advancedOpen=true
+            return
+        }
+        applyRequested(endpoint,marketEnabled,marketSource)
+    }
     onMarketSourceChanged: useCustomSource = !!marketSource.url
     spacing: root.spaces.md
     Keys.onEscapePressed: root.closeRequested()
@@ -117,6 +127,7 @@ ColumnLayout {
             description: "Use your own HTTPS market API instead of Kraken."
             checked: root.useCustomSource
             onClicked: {
+                root.formError=""
                 root.useCustomSource = !root.useCustomSource
                 if(!root.useCustomSource)root.marketSource=({name:"Kraken",url:"",price_pointer:"/price",points_pointer:"/points",timestamp_pointer:"/timestamp",point_price_pointer:"/price",interval_secs:3600})
             }
@@ -126,7 +137,7 @@ ColumnLayout {
             visible: root.useCustomSource
             spacing: root.spaces.sm
             Ui.TextField { Layout.fillWidth:true; text:root.marketSource.name; placeholderText:"Source name"; onTextEdited:root.marketSource.name=text }
-            Ui.TextField { Layout.fillWidth:true; text:root.marketSource.url; placeholderText:"https://api.example/market.json"; onTextEdited:root.marketSource.url=text }
+            Ui.TextField { Layout.fillWidth:true; text:root.marketSource.url; placeholderText:"https://api.example/market.json"; onTextEdited:{root.marketSource.url=text;root.formError=""} }
             Text { Layout.fillWidth:true; text:"JSON Pointers map the current USD price and an ordered history covering at least 24 hours. Sample timestamps must be Unix seconds."; wrapMode:Text.WordWrap; color:Commons.Color.foreground; opacity:0.65; font.family:root.typography.family; font.pixelSize:root.typography.bodySmall }
             Ui.TextField { Layout.fillWidth:true; text:root.marketSource.price_pointer; placeholderText:"Price pointer · /price"; onTextEdited:root.marketSource.price_pointer=text }
             Ui.TextField { Layout.fillWidth:true; text:root.marketSource.points_pointer; placeholderText:"History pointer · /points"; onTextEdited:root.marketSource.points_pointer=text }
@@ -142,13 +153,14 @@ ColumnLayout {
         }
         Text { Layout.fillWidth:true; text:"Public providers can see your IP unless a proxy is configured. No wallet or node data is sent to the price provider."; wrapMode:Text.WordWrap; color:Commons.Color.foreground; opacity:0.6; font.family:root.typography.family; font.pixelSize:root.typography.bodySmall }
     }
+    Text {Layout.fillWidth:true;visible:root.formError!=="";text:root.formError;wrapMode:Text.WordWrap;color:Commons.Color.urgent;font.family:root.typography.family;font.pixelSize:root.typography.bodySmall}
     Ui.Button {
         Layout.fillWidth: true
         enabled: root.available && !root.busy
         text: root.busy ? "Saving…" : "Save settings"
         bordered: true
         focusable: true
-        onClicked: root.applyRequested(root.endpoint,root.marketEnabled,root.marketSource)
+        onClicked: root.submit()
     }
     Ui.PanelSeparator { Layout.fillWidth: true }
     Ui.Button {

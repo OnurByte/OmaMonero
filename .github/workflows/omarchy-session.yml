@@ -14,3 +14,5 @@ jobs:
       - run: python3 scripts/test-qml-runtime.py
       - run: python3 scripts/test-http-cancel.py
       - run: python3 scripts/test-plugin-lifecycle.py
+      - run: python3 scripts/test-config-io.py
+      - run: python3 scripts/test-chart-render.py

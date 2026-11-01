@@ -17,6 +17,7 @@ Item {
     property int hoverIndex: -1
     property real hoverY: 0
     property int previousLength: 0
+    property double anchorTimestamp: 0
     readonly property var typography: Style.font
     readonly property color labelColor: Commons.Color.foreground
     readonly property real labelSize: Math.max(typography.bodySmall,Style.space(11))
@@ -61,6 +62,7 @@ Item {
         const w=Generated.api().chartWindow(series,count,offset)
         barsVisible=w.count || Math.round(86400/intervalSecs)+1
         endOffset=w.offset
+        anchorTimestamp=w.offset>0 && w.rows.length?w.rows[w.rows.length-1].timestamp:0
         hoverIndex=-1
     }
     function zoom(factor,anchor) {
@@ -68,14 +70,22 @@ Item {
         setWindow(next.count,next.offset)
     }
     function pan(bars) { setWindow(windowData.count,windowData.offset+bars) }
-    function resetView() { barsVisible=Math.round(86400/intervalSecs)+1;endOffset=0;hoverIndex=-1 }
+    function resetView() { barsVisible=Math.round(86400/intervalSecs)+1;endOffset=0;anchorTimestamp=0;hoverIndex=-1 }
     function timeLabel(fraction) {
         if(rows.length<2)return ""
         const span=rows[rows.length-1].timestamp-rows[0].timestamp
         const stamp=rows[0].timestamp+span*fraction
         return Qt.formatDateTime(new Date(stamp*1000),span>172800?"dd MMM":"HH:mm")
     }
-    onSeriesChanged: { if(previousLength===0 && series.length)resetView();previousLength=series.length;hoverIndex=-1;plot.requestPaint() }
+    onSeriesChanged: {
+        if(previousLength===0 && series.length)resetView()
+        else if(anchorTimestamp>0){
+            const nextOffset=Generated.api().anchoredChartOffset(series,barsVisible,anchorTimestamp)
+            if(interaction && interaction.pressed)interaction.dragOffset+=nextOffset-endOffset
+            endOffset=nextOffset
+        }
+        previousLength=series.length;hoverIndex=-1;plot.requestPaint()
+    }
     onIntervalSecsChanged: resetView()
     onWindowDataChanged: plot.requestPaint()
     onCandleModeChanged: plot.requestPaint()
@@ -227,6 +237,7 @@ Item {
         }
     }
     MouseArea {
+        id:interaction
         anchors.left: parent.left
         width: root.plotRight
         height: root.volumeBottom

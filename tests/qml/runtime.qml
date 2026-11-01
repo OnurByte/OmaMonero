@@ -15,7 +15,9 @@ QtObject {
         currentPrice:220
     }
     property Item navigation: Components.PanelNavigation {width:Style.space(430)}
-    property Item settings: Components.SetupPage {width:Style.space(430);available:true}
+    property bool uiChecksComplete: false
+    property int settingSubmissions: 0
+    property Item settings: Components.SetupPage {width:Style.space(430);available:true;onApplyRequested:settingSubmissions++}
     property Item chart: Components.Sparkline {width:300;height:180;detailed:true;axisLow:575;axisHigh:636;points:[{timestamp:1,price:575},{timestamp:2,price:636}]}
     property Timer check: Timer {
         interval:100;running:true;repeat:true
@@ -29,6 +31,14 @@ QtObject {
                 trading.pan(10000)
                 if(trading.windowData.startIndex!==0){console.error("OMAMONERO_RUNTIME_FAIL: pan bounds");Qt.quit();return}
                 trading.resetView()
+                if(typeof settings.submit!=="function"){console.error("OMAMONERO_RUNTIME_FAIL: custom source validation missing");Qt.quit();return}
+                settings.useCustomSource=true
+                settings.submit()
+                if(settingSubmissions!==0 || !settings.formError){console.error("OMAMONERO_RUNTIME_FAIL: empty custom source was accepted");Qt.quit();return}
+                settings.marketSource.url="https://example.com/market.json"
+                settings.submit()
+                if(settingSubmissions!==1){console.error("OMAMONERO_RUNTIME_FAIL: valid custom source was blocked");Qt.quit();return}
+                uiChecksComplete=true
             }
             if(ticks===2 && (navigation.tabs.length!==3 || navigation.implicitWidth>navigation.width || settings.advancedOpen || settings.maintenanceOpen)){console.error("OMAMONERO_RUNTIME_FAIL: primary hierarchy/disclosure",navigation.tabs.length,navigation.implicitWidth,navigation.width,settings.advancedOpen,settings.maintenanceOpen,panelCheck.page);Qt.quit();return}
             if(stage===0 && s.view.state==="online" && s.modulesData.wallet.state==="ready" && s.modulesData.wallet.incoming.length===1 && s.modulesData.xmrig.state==="ready" && s.modulesData.p2pool.state==="ready") {
@@ -48,7 +58,7 @@ QtObject {
                 s.command("save",s.config.endpoint,false,{transport:"local",proxy:"",network:"mainnet",market_source:s.config.market_source})
                 stage=2
             }
-            if(stage===2 && s.setupData.message==="Settings saved." && s.incomingRequests.length===1) {
+            if(stage===2 && uiChecksComplete && s.setupData.message==="Settings saved." && s.incomingRequests.length===1) {
                 s.command("wallet",undefined,undefined,{wallet:"feather"})
                 if(s.setup.state==="running"){console.error("OMAMONERO_RUNTIME_FAIL: Wallet launch locks the UI until wallet exits");Qt.quit();return}
                 console.log("OMAMONERO_RUNTIME_PASS: native widget and panel, TS bundle, direct RPC, u64 wallet, bounded history, XMRig, P2Pool, QR, proof, private config save, URI inbox")

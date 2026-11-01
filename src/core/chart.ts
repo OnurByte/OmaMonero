@@ -22,3 +22,10 @@ export function chartZoom(length:number,count:number,offset:number,factor:number
     const start=Math.max(0,Math.min(length-next.count,Math.round(point-(next.count-1)*a)));
     return {count:next.count,offset:length-start-next.count};
 }
+export function anchoredChartOffset(series:Dict[],count:number,timestamp:number):number {
+    const b=bounded(series.length,count,0);
+    if(!series.length || !Number.isFinite(timestamp))return 0;
+    let index=0;
+    for(let i=series.length-1;i>=0;i--){if(series[i].timestamp<=timestamp){index=i;break;}}
+    return Math.max(0,Math.min(series.length-b.count,series.length-1-index));
+}
