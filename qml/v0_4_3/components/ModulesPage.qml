@@ -1,6 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import "../Status.js" as Status
+import "../generated/Core.js" as Generated
 import QtQuick.Layouts
 import qs.Commons
 import qs.Commons as Commons
@@ -29,7 +29,7 @@ ColumnLayout {
         if (value.state === "ready") return "Connected"
         return "Unavailable"
     }
-    function amount(value) { return Status.atomicLabel(value) }
+    function amount(value) { return Generated.api().atomicLabel(value) }
     function number(value, suffix) { return value === null || value === undefined ? "—" : value + (suffix || "") }
     Text {
         text: "Wallet & mining"

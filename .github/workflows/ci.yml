@@ -19,9 +19,9 @@ jobs:
           python-version: '3.12'
       - run: npm ci --ignore-scripts
       - run: npm run check
-      - run: git diff --exit-code -- qml/v0_4_2/generated/Core.js
+      - run: git diff --exit-code -- qml/v0_4_3/generated/Core.js
       - run: npm audit --audit-level=moderate
-      - run: node --test tests/status.test.cjs
+      - run: npm run test:presentation
       - run: python3 scripts/check-contract.py
       - run: python3 -m unittest discover -s tests -p '*_test.py'
       - name: Official Omarchy validator (pinned Quattro contract)
@@ -36,7 +36,7 @@ jobs:
           cmp /tmp/first-checksums dist/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: omamonero-plugin-0.4.2
+          name: omamonero-plugin-0.4.3
           path: |
-            dist/omamonero-plugin-0.4.2.tar.gz
+            dist/omamonero-plugin-0.4.3.tar.gz
             dist/SHA256SUMS

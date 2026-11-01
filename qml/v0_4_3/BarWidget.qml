@@ -1,5 +1,5 @@
 import QtQuick
-import "Status.js" as Status
+import "generated/Core.js" as Generated
 import "components" as Components
 import qs.Commons
 import qs.Ui as Ui
@@ -12,12 +12,12 @@ Ui.BarWidget {
     property var manifest: null
     property var pluginRegistry: null
     property var barWidgetRegistry: null
-    readonly property string marketLabel: Status.marketLabel(market)
+    readonly property string marketLabel: Generated.api().marketLabel(market)
     readonly property bool ready: StatusStore.ready && StatusStore.configLoaded && !StatusStore.configError
     readonly property var view: StatusStore.view
     readonly property var market: view.market
     readonly property bool marketReady: market.state === "ready"
-    readonly property color trendColor: Status.trendColor(marketReady ? market.change_percent : NaN)
+    readonly property color trendColor: Generated.api().trendColor(marketReady ? market.change_percent : NaN)
     readonly property bool opened: popup.opened
     readonly property bool popoutSwitchClosing: popup.popoutSwitchClosing
     readonly property real openPanelIndicatorWidth: barLabel.implicitWidth + Style.space(18)
@@ -38,7 +38,7 @@ Ui.BarWidget {
         anchors.fill: parent
         bar: root.bar
         text: root.vertical ? "$XMR" : "$XMR " + root.marketLabel
-        tooltipText: root.marketReady ? root.market.source + " · XMR/USD · 24h " + Status.changeLabel(root.market.change_percent) : root.market.state === "loading" ? "Loading XMR/USD prices" : root.market.state === "disabled" ? "Public prices are paused" : "Fresh XMR/USD prices are unavailable · open to retry"
+        tooltipText: root.marketReady ? root.market.source + " · XMR/USD · 24h " + Generated.api().changeLabel(root.market.change_percent) : root.market.state === "loading" ? "Loading XMR/USD prices" : root.market.state === "disabled" ? "Public prices are paused" : "Fresh XMR/USD prices are unavailable · open to retry"
 
         labelVisible: false
         Image {

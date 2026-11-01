@@ -1,16 +1,12 @@
-.pragma library
-
-function integer(value) {
-    return typeof value === "number" && isFinite(value) && value >= 0 && value <= 9007199254740991 && Math.floor(value) === value
-}
-function bytes(value) {
+import {integer, type Dict} from './privacy';
+export function bytes(value: unknown) {
     if (!integer(value)) return "Unavailable"
     if (value >= 1073741824) return (value / 1073741824).toFixed(1) + " GiB"
     if (value >= 1048576) return (value / 1048576).toFixed(1) + " MiB"
     return value + " B"
 }
 
-function marketView(m, now) {
+export function marketView(m: Dict | null | undefined, now: number): Dict {
     if (!m || m.state === "disabled") return {state: "disabled"}
     if (m.state === "loading") return {state: "loading"}
     if (m.state === "unavailable") return {state: "unavailable"}
@@ -44,17 +40,17 @@ function marketView(m, now) {
     }
     return m
 }
-function changeLabel(value) {
+export function changeLabel(value: unknown) {
     if (typeof value !== "number" || !isFinite(value)) return "—"
     return (value > 0 ? "+" : value < 0 ? "−" : "") + Math.abs(value).toFixed(2) + "%"
 }
 
-function trendColor(change) {
+export function trendColor(change: unknown) {
     if (typeof change !== "number" || !isFinite(change)) return "#9ca3af"
     return change < 0 ? "#ef4444" : "#22c55e"
 }
 
-function atomicLabel(value) {
+export function atomicLabel(value: unknown) {
     if (typeof value === "number" && (!integer(value) || value > 9007199254740991)) return "Unavailable"
     if (value === null || value === undefined) return "—"
     var digits = String(value)
@@ -65,7 +61,7 @@ function atomicLabel(value) {
     return whole + (fraction ? "." + fraction : "") + " XMR"
 }
 
-function marketLabel(m) {
+export function marketLabel(m: Dict | null | undefined) {
     if (m && m.state === "ready") return "$" + m.price.toFixed(2) + " " + changeLabel(m.change_percent)
     if (m && m.state === "loading") return "Loading…"
     if (m && m.state === "disabled") return "Paused"

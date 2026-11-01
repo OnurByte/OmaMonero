@@ -25,10 +25,6 @@ p2pool)
 wallet)
   case "${2:-}" in feather) exec feather ;; monero_gui) exec monero-wallet-gui ;; *) exit 1 ;; esac
   ;;
-legacy-cleanup)
-  # Only user units, only after the native panel's explicit confirmation.
-  systemctl --user disable --now omamonero.service
-  ;;
 register-uri)
   apps="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
   mkdir -p -- "$apps"

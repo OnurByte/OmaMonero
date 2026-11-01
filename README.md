@@ -29,7 +29,7 @@ Scroll to zoom, drag through history, or switch to a line chart. Price comes fir
   <img src="docs/screenshots/about-panel.png" alt="OmaMonero About panel explaining price source, privacy and local payment tools" width="630">
 </p>
 
-Actual Omarchy captures, 1 November 2026. Market values change; the panel shows their source and update time. Original banner and Monero artwork retained.
+Actual Omarchy 0.4.2 captures, 1 November 2026. Market values change; the panel shows their source and update time. Original banner and Monero artwork retained.
 
 ## Install and use
 
@@ -55,13 +55,13 @@ Monitoring and notifications run while Quickshell is active. No separate OmaMone
 
 The obsolete v0.3.2 standalone bundle is retired: private payment requests could appear in process listings. Do not use it.
 
-Version 0.4.2 adds the price-first interface and advanced native chart, and includes the native runtime fixes from 0.4.1.
+Version 0.4.3 removes the retired configuration migration and service cleanup paths. All authored application logic, build scripts and presentation tests are TypeScript; the single committed JS file is generated for Quickshell.
 
-## Updating from 0.3.x
+## Settings
 
-The panel reads existing `~/.config/omamonero/config.toml` without rewriting it. Saving creates `config.json`; existing node, network, proxy, price-source and module choices are retained. Invalid old settings pause requests until corrected. Public receiving-address settings are retained.
+The panel uses `~/.config/omamonero/config.json`. Existing JSON settings, including paused prices and proxy choices, are retained. The retired TOML configuration and companion service are no longer read or managed. Settings can be changed directly in the native panel.
 
-The old user service is not stopped automatically. Settings offers a separate confirmation to stop and disable it. Legacy system-wide services require their existing installation manager; the new widget never elevates itself. URI handler restoration is verified before owned handler files can be removed. If restoration fails, removal stops and keeps the receipt and files for retry.
+Optional payment-link integration restores and verifies the previous URI handler before removing owned files. If restoration fails, removal stops and keeps its receipt for retry.
 
 ## Compatibility and verification
 
@@ -69,4 +69,4 @@ Requires Omarchy Quattro / Quickshell and the standard desktop utilities shipped
 
 Local tests and checksums do not mean official marketplace verification. Marketplace review and removal of any Manual setup label are controlled by its maintainers; no approval is claimed here.
 
-Development and test instructions: [docs/development.md](docs/development.md). Architecture: [docs/architecture.md](docs/architecture.md). Migration evidence: [docs/typescript-migration.md](docs/typescript-migration.md).
+Development and test instructions: [docs/development.md](docs/development.md). Architecture: [docs/architecture.md](docs/architecture.md). Verification: [docs/verification.md](docs/verification.md).

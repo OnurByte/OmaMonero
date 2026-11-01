@@ -1,59 +1,20 @@
-# OmaMonero — binding end-user requirements
+# OmaMonero product requirements
 
-Recorded from the user's instruction on 2026-10-30. These requirements apply to
-future work and override developer-oriented installation instructions.
+Current user preferences, consolidated 2026-11-01. These supersede older installer, migration and default-off plans in git history.
 
-- This is a production-oriented end-user product. Users must not type commands,
-  compile Rust, edit configuration files or manually start services to install it.
-- Ship a graphical, clickable installer with a prebuilt, architecture-matching
-  binary. Prefer user-only installation requiring no administrator privilege.
-- If system changes ever require privilege, use `pkexec` only during installation,
-  at most one authorization flow. Never use sudo or elevate the GUI, daemon,
-  shell plugin or routine operation.
-- Respect the official Omarchy plugin manager, native components and
-  enable/disable/update/remove lifecycle. Never edit packaged Omarchy sources or
-  implement a second desktop shell/dock.
-- Put the clickable Monero widget in the existing upper bar/dock area. Respect
-  the user's chosen bar orientation; do not move the whole bar to force this.
-- Show a compact XMR/USD sparkline and trailing 24-hour percentage change in the
-  upper bar, with a detailed chart and node information on click. USD/24h was
-  explicitly confirmed by the user.
-- Explain external market requests in the installer and require an explicit
-  choice. Default config remains local-only. Price requests must respect a
-  selected proxy policy and never silently bypass it.
-- Distinguish tested compatibility and checksums from official Omarchy
-  marketplace verification. Never claim Verified or production certification
-  without an actual registry record bound to the shipped commit.
-- Keep stale/unavailable data explicit. Never fabricate prices, changes, node
-  status, verification badges or successful installation.
-- Receive QR/payment requests are created locally from a public address only.
-  Incoming `monero:` links must open a preview without sending a payment or
-  reading keys. Persist incoming previews outside setup-job progress, queue them
-  with a bounded private session history, and preserve them across UI reloads.
-- Wallet launch is explicit; pass no payment URI as an auto-send instruction.
-  Copy the request for the user to review inside their wallet.
-- The installed URI handler must be restored and verified before its launcher
-  file can be removed. If restoration fails, retain the owned files and receipt
-  so removal can be retried safely.
-
-## Explicit native-only correction (2026-10-30)
-
-The user rejected GNOME/Zenity dialogs, a separate settings application and the
-custom icon. All setup, settings, diagnostics and removal must live inside the
-existing Omarchy bar/panel using qs.Ui. No Zenity, GTK settings windows, desktop
-settings app, custom dock or fabricated icon. A clickable downloaded launcher
-may bootstrap the native bar panel, but it must not open another GUI toolkit.
-Use a simple XMR text/sparkline indicator and native text controls. Explicit
-helper jobs are detached so plugin reload/removal cannot kill their own action;
-private FileView state carries progress, without subprocess polling.
-
-## Branding and window correction
-Use the user-supplied OmaMonero-logo.svg unchanged. Trend colors are red for negative, green for positive, and gray for exactly flat movement, independent of theme accent; keep the XMR label white. Never open a blank/white standalone Quickshell window. Test engines must have a QtObject root, not a top-level Item that the host could wrap in a visible window.
-
-## Approved TypeScript/native-only migration (2026-11-01)
-
-The user approved preserving all features while replacing the Rust backend, Python installer and systemd dependency with strict TypeScript compiled into committed QML-compatible JavaScript. This supersedes the mandatory prebuilt-binary/graphical-installer architecture above. Users install through the official graphical Omarchy plugin manager; no developer commands or build tools are required. All flows remain inside the existing native bar/panel. Standard OS utilities may perform narrow transport/desktop operations, but there is no OmaMonero backend process or service. Previous configuration is preserved and old user-service shutdown requires explicit panel confirmation. Shell-off notifications are unavailable without a daemon. Marketplace approval remains an external decision. Follow AGENTS.md for the supplied logo and trend colors, including green at exactly zero.
-
-## Explicit price-first UX correction (2026-11-01)
-
-The user explicitly said “default açık” for public prices, superseding default-off/initial opt-in text above. New installations show XMR/USD prices and the 24-hour chart by default. Respect an existing explicit pause and provide a simple resume/pause action. Do not present optional node unavailability as the widget's default Offline state. Use a simple, comfortable hierarchy: price first, receiving second, optional tools/settings behind progressive disclosure. Keep source/freshness truthful and never bypass a selected proxy.
+- Use the official graphical Omarchy plugin manager for installation, updates, enable/disable and removal. Users do not type commands or build the project.
+- Run inside the existing native Omarchy bar and qs.Ui panel. No standalone settings application, second shell, GTK or Zenity dialogs.
+- Author application logic in strict TypeScript, compiled into committed QML-compatible JavaScript. Quickshell supplies the native interface. Users need no Node, npm, Python installer, Rust binary, OmaMonero backend or service.
+- Remove retired TOML configuration migration, compatibility code and old service cleanup controls. Support current JSON settings. Do not delete or manage a user's previous installation files or services as part of this code cleanup.
+- Public XMR/USD prices and the trailing 24-hour chart are enabled by default, explicitly requested by the user. Retain existing JSON pauses, proxy choices and module settings; provide a simple pause control. An absent optional node must not make the default bar appear Offline.
+- Keep the hierarchy comfortable: Price, Receive, More. Technical settings use progressive disclosure. The chart supports readable axes, real OHLC/volume, candle/line views, crosshair, zoom, pan and expanded view. Do not fabricate data or freshness.
+- Keep the approved banner and user-supplied orange Monero artwork. The path-flattened SVG preserves its appearance for Qt. XMR stays white; negative market movement is red and zero/positive green. The About header hit target covers only logo/title.
+- Keep node, watch-only wallet, incoming payment notifications, XMRig, P2Pool, receive QR, URI previews and proof verification. These optional tools remain inside the native panel. No automatic node or wallet startup; shell-off notifications have no daemon.
+- Respect selected Tor/I2P SOCKS5h proxies with remote DNS. Never fall back to direct access. Invalid/unreadable current settings stop requests. Wallet/miner RPC uses numeric loopback. Preserve atomic Monero amount precision.
+- Never request seeds or private spend keys and never send payments. Validate public addresses, checksum and network locally. Receive QR generation is local.
+- Preview incoming monero links in a bounded private session inbox; retain previews across panel reloads/settings saves. Do not put private URI/proof contents in process arguments, logs or notifications. Wallet launch is explicit and receives no auto-send URI.
+- Restore and verify a previous OS URI handler before removing owned integration files. If restoration fails, retain files/receipt and allow retry.
+- Prefer user-only operations. Never elevate the GUI/plugin or routine actions. Any unavoidable privileged installation action must be narrow and use pkexec, never sudo.
+- Marketplace Verified requires an actual record for the exact shipped commit. Local tests and checksums do not confer it; Manual setup removal remains a maintainer decision.
+- README should include attractive actual bar/panel screenshots alongside the unchanged approved banner/icon. Never present fixture data as a live product screenshot.
+- Native test engines use a QtObject root and must not create blank desktop windows.

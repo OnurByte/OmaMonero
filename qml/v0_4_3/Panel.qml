@@ -201,7 +201,7 @@ Ui.Panel {
                     Components.AboutPage {
                         Layout.fillWidth: true
                         visible: root.page === "about"
-                        appVersion: root.hostWidget && root.hostWidget.manifest ? root.hostWidget.manifest.version : "0.4.2"
+                        appVersion: root.hostWidget && root.hostWidget.manifest ? root.hostWidget.manifest.version : "0.4.3"
                         priceSource: StatusStore.config.market_source.url ? StatusStore.config.market_source.name : "Kraken"
                         connection: StatusStore.config.transport
                     }
@@ -236,7 +236,6 @@ Ui.Panel {
                         busy: root.busy
                         onApplyRequested: function(endpoint, marketEnabled, marketSource) { StatusStore.command(StatusStore.pendingSetup ? "install" : "save", endpoint, marketEnabled, {market_source: marketSource,transport:setupForm.transport,proxy:setupForm.proxy,network:setupForm.network}) }
                         onRemoveRequested: StatusStore.command("remove")
-                        onLegacyCleanupRequested: StatusStore.command("legacy-cleanup")
                         onCloseRequested: root.close()
                     }
                     ColumnLayout {

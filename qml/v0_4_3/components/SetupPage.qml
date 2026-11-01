@@ -20,13 +20,11 @@ ColumnLayout {
     property bool maintenanceOpen: false
     property bool useCustomSource: false
     property string formError: ""
-    property bool confirmLegacy: false
     property bool confirmingRemoval: false
     readonly property var typography: Style.font
     readonly property var spaces: Style.spacing
     signal applyRequested(string endpoint, bool marketEnabled, var marketSource)
     signal removeRequested()
-    signal legacyCleanupRequested()
     signal closeRequested()
     function submit() {
         formError=""
@@ -173,16 +171,6 @@ ColumnLayout {
         Layout.fillWidth: true
         visible: root.maintenanceOpen
         spacing: root.spaces.sm
-        Ui.Button {
-            Layout.fillWidth:true
-            text: root.confirmLegacy ? "Cancel old service cleanup" : "Previous version: stop old service"
-            enabled: root.available && !root.busy
-            focusable:true
-            onClicked:root.confirmLegacy=!root.confirmLegacy
-        }
-        Text { Layout.fillWidth:true; visible:root.confirmLegacy; text:"Stop and disable the old omamonero user service? Your settings, Monero node and wallet remain in place."; wrapMode:Text.WordWrap; color:Commons.Color.foreground; font.family:root.typography.family; font.pixelSize:root.typography.bodySmall }
-        Ui.Button { visible:root.confirmLegacy; text:"Confirm: stop old service"; enabled:!root.busy; focusable:true; onClicked:{root.confirmLegacy=false;root.legacyCleanupRequested()} }
-        Ui.PanelSeparator { Layout.fillWidth: true }
         Ui.Button {
             Layout.fillWidth:true
             visible:!root.confirmingRemoval

@@ -1,10 +1,4 @@
-/target/
-/.superpowers/
-*.pkg.tar.*
-/packaging/src/
-/packaging/pkg/
 /dist/
+/node_modules/
 __pycache__/
 *.py[cod]
-
-/node_modules/
