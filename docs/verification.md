@@ -14,3 +14,9 @@ Passed locally:
 - QML lint, offscreen chart rendering, official Omarchy archive validation and fresh manager lifecycle using the working frontend.
 
 Official manager lifecycle and publication are checked separately before delivery. Marketplace approval remains external and is never inferred from these checks. README captures are actual 0.4.2 desktop captures; branding and primary layout are unchanged.
+
+## Positive command contracts
+
+The two scanner-misclassified negative word assertions were replaced with reviewed launch-shape and helper-action allowlists. The actual QML/shell application files are unchanged. The bounded HTTP transport is tied to its fixed curl argument vector. Native integration tests run with a test-only command allowlist, reject an unreviewed builtin (including an environment-prefixed command and an exec wrapper) before execution, and verify both fixed wallet choices receive no payment arguments. This instrumentation is a regression test, not a general runtime sandbox.
+
+All eleven native/contract tests pass. Using the unchanged marketplace baseline implementation locally, the verified b2b807f tree reproduces privilege/service-management review-required findings; the candidate tree returns passed with zero capabilities and zero findings. Official publication evidence must be generated again for the new exact upstream commit; the old snapshot and its review remain immutable. No scanner policy, verification approval, or runtime behavior was bypassed or changed.
