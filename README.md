@@ -1,5 +1,14 @@
 # OmaMonero
 
+<p align="center">
+  <img src="docs/brand/banner-reference.png" alt="OmaMonero — Secure, private and untraceable" width="960">
+</p>
+
+<p align="center">
+  <a href="https://github.com/tcballard/omarchy-badges"><img src="https://raw.githubusercontent.com/tcballard/omarchy-badges/75975e5b5bf75e7ede3764bcd2950046f7abfe2c/badges/v1/omarchy-plugin.svg" alt="Built for Omarchy: Plugin"></a>
+  <a href="https://github.com/OnurByte/OmaMonero/actions/workflows/ci.yml"><img src="https://github.com/OnurByte/OmaMonero/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
+</p>
+
 A native Monero widget for Omarchy Quattro. TypeScript runs inside the existing Quickshell bar and panel. No OmaMonero backend, service, Rust binary, Python installer, Node.js or npm is required by users.
 
 ## Install and use
@@ -21,6 +30,8 @@ Price source and freshness are shown with the chart. Stale, invalid or unavailab
 - Native settings, read-only diagnostics and removal through the official plugin manager.
 
 Monitoring and notifications run while Quickshell is active. No separate OmaMonero daemon runs after the shell closes. Watch-only is a user confirmation; balances may overstate spendable funds without imported key images. Seed phrases and private spend keys are never requested.
+
+The obsolete v0.3.2 standalone bundle is retired: private payment requests could appear in process listings. Do not use it.
 
 ## Updating from 0.3.x
 

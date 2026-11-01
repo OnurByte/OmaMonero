@@ -11,6 +11,7 @@ Passed locally:
 - Quickshell HTTP cancellation test verifies that active/queued old work cannot run the queued action after cancellation.
 - QML lint without warnings. The Wayland fixture emits a host portal registration warning in this shared desktop session; assertions pass and no standalone window is opened.
 - Official installed Omarchy validator against the exact packaged plugin archive.
+- Official manager add/enable/disable/remove on a fresh candidate checkout and a 0.3.x→0.4 update using the real Omarchy PluginRegistry and widget in an isolated native Wayland engine. Temporary HOME, configuration and IPC paths prevent changes to the active desktop. No Rust binary/service/installer is installed.
 - Deterministic archive generation and matching SHA-256 on repeated builds.
 - npm dependency audit: zero reported vulnerabilities.
 - Whitespace and backend-free version/packaging contract checks.

@@ -8,6 +8,7 @@ Users install with the graphical Omarchy plugin manager. The commands here are o
 - `python3 -m unittest discover -s tests -p '*_test.py'`: isolated native lifecycle tests.
 - `python3 scripts/check-contract.py`: version and backend-free packaging contract.
 - `python3 scripts/lint-qml.py`: native QML lint against installed Omarchy.
+- `python3 scripts/test-plugin-lifecycle.py`: official add/enable/update/disable/remove commands with the real Omarchy registry/widget in an isolated Wayland engine; no second desktop bar or live user configuration changes.
 - `python3 scripts/test-http-cancel.py`: verifies active/queued HTTP cancellation with a QtObject-root engine.
 - `python3 scripts/test-qml-runtime.py`: non-visual QtObject-root engine in a Wayland session, with fixture node/wallet/miner APIs, P2Pool data, proof and receive QR. Uses a temporary home and session directory, never installs or changes the live plugin.
 - `python3 scripts/validate-plugin.py`: official local validator; does not confer marketplace verification.

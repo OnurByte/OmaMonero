@@ -1,0 +1,32 @@
+name: Publish native plugin
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: git diff --exit-code -- qml/v0_4_0/generated/Core.js
+      - run: node --test tests/status.test.cjs
+      - run: python3 -m unittest discover -s tests -p '*_test.py'
+      - run: python3 scripts/check-contract.py
+      - run: python3 scripts/package.py
+      - name: Publish plugin archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p 'JSON.parse(require("fs").readFileSync("manifest.json")).version')
+          gh release create "v${version}" "dist/omamonero-plugin-${version}.tar.gz" dist/SHA256SUMS \
+            --target "$GITHUB_SHA" --title "OmaMonero ${version}" \
+            --notes "Native TypeScript/QML Omarchy plugin. Install and manage through the official plugin manager. No OmaMonero backend, service, Rust binary, Python installer or user build step. External prices are opt-in. Marketplace verification is separate and is not claimed by this release."
