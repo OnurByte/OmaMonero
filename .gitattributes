@@ -1,0 +1,2 @@
+# Runtime output is generated from strict TypeScript, not hand-authored JavaScript.
+qml/**/generated/*.js linguist-generated=true

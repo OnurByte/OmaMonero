@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
-FRONT=ROOT/'qml/v0_4_2'
+FRONT=ROOT/'qml/v0_4_3'
 class NativeTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.base=Path(self.tmp.name);self.home=self.base/'home';self.home.mkdir();self.runtime=self.base/'runtime';self.runtime.mkdir(mode=0o700);self.bin=self.base/'bin';self.bin.mkdir()
@@ -35,8 +35,8 @@ esac''')
     def test_remove_restores_and_verifies_then_uses_official_manager(self):
         self.register();self.assertEqual(self.run_action('remove').returncode,0)
         self.assertEqual((self.base/'default').read_text(),'old-wallet.desktop');self.assertFalse((self.data/'uri-owned').exists());self.assertIn('plugin remove io.github.onurbyte.omamonero --yes',(self.base/'manager').read_text())
-    def test_cleanup_is_user_only_and_never_runs_at_init(self):
-        self.assertEqual(self.run_action('init').returncode,0);self.assertFalse((self.base/'systemctl').exists());self.assertEqual(self.run_action('legacy-cleanup').returncode,0);self.assertEqual((self.base/'systemctl').read_text().strip(),'--user disable --now omamonero.service')
+    def test_retired_service_cleanup_is_not_an_available_action(self):
+        self.assertEqual(self.run_action('init').returncode,0);self.assertFalse((self.base/'systemctl').exists());self.assertNotEqual(self.run_action('legacy-cleanup').returncode,0);self.assertFalse((self.base/'systemctl').exists())
     def test_uri_inbox_is_bounded_private_and_never_forwarded_to_notifications(self):
         for i in range(23):subprocess.run(['bash',str(FRONT/'uri-handler.sh'),f'monero:PRIVATE_ADDRESS?tx_amount={i+1}'],env=self.env,check=True)
         inbox=self.runtime/'omamonero-native/inbox';self.assertEqual(len(inbox.read_text().splitlines()),20);self.assertEqual(inbox.stat().st_mode&0o077,0);self.assertNotIn('PRIVATE_ADDRESS',(self.base/'notifications').read_text())

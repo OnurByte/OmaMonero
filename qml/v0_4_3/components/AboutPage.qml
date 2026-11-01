@@ -7,7 +7,7 @@ import qs.Ui as Ui
 
 ColumnLayout {
     id: root
-    property string appVersion: "0.4.2"
+    property string appVersion: "0.4.3"
     property string priceSource: "Kraken"
     property string connection: "local"
     readonly property var typography: Style.font

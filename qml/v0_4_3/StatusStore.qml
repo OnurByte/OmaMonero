@@ -2,7 +2,6 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import "Status.js" as Status
 import "generated/Core.js" as Generated
 
 QtObject {
@@ -23,7 +22,6 @@ QtObject {
     property bool configLoaded: false
     property bool configError: false
     property bool jsonSeen: false
-    property bool legacySeen: false
     readonly property bool pendingSetup: false
     readonly property bool controlsAvailable: ready
     property var setup: ({state:"idle"})
@@ -39,7 +37,7 @@ QtObject {
     readonly property var view: ({state:nodeTime && now-nodeTime>Math.max(15,config.poll_interval_secs*3)?"stale":nodeData.state,
         message:nodeTime && now-nodeTime>Math.max(15,config.poll_interval_secs*3)?"Node data is stale":nodeData.state==="online"?"Node online":nodeData.state==="syncing"?"Node syncing":"Node offline · optional",
         node:nodeTime && now-nodeTime>Math.max(15,config.poll_interval_secs*3)?null:nodeData,
-        privacy:{transport:config.transport,p2p_verified:false},market:Status.marketView(marketData,now),modules:visibleModules()})
+        privacy:{transport:config.transport,p2p_verified:false},market:Generated.api().marketView(marketData,now),modules:visibleModules()})
     function visibleModules() {
         const out=Object.assign({},modulesData)
         for(const name of ["wallet","xmrig"]){const m=out[name];if(m && m.state==="ready" && now-m.updated_at>Math.max(30,config.poll_interval_secs*3))out[name]={state:"stale"}}
@@ -148,7 +146,7 @@ QtObject {
                 return
             }
             else if(action==="wallet") {if(["feather","monero_gui"].indexOf(payload.wallet)<0)return;Quickshell.execDetached(["/bin/bash",helper,"wallet",payload.wallet]);details("Wallet launch requested. If it is not installed, use Omarchy’s application manager.")}
-            else if(action==="register-uri" || action==="remove" || action==="legacy-cleanup") {osAction(action);return}
+            else if(action==="register-uri" || action==="remove") {osAction(action);return}
             else if(action==="diagnostics") {details("Refreshing read-only connections. No node is started.");refresh(true)}
             setup={state:"done"}
         } catch(e) {fail(e.message || "Action could not complete")}
@@ -187,20 +185,11 @@ QtObject {
         onFileChanged:reload()
         onLoadFailed:function(error) {
             if(!root.ready)return
-            if(error===FileViewError.FileNotFound && !root.jsonSeen){legacyFile.reload();legacyFile.text()}
+            if(error===FileViewError.FileNotFound && !root.jsonSeen){root.configLoaded=true;root.details();root.refresh();root.refreshInbox()}
             else root.invalidateConfig("Saved settings could not be read. Requests are paused to protect your connection policy.")
         }
         onSaved:root.details("Settings saved.")
         onSaveFailed:root.fail("Settings could not be saved. Your previous file was retained.")
-    }
-    property FileView legacyFile: FileView {
-        path:root.configDirectory+"/config.toml"
-        printErrors:false;preload:false
-        onLoaded: {root.legacySeen=true;try{root.applyConfig(core.legacyConfig(text()));root.configLoaded=true;root.details("Previous settings loaded. Save to migrate; the old service is retained until you explicitly stop it.");root.refresh();refreshInbox()}catch(e){root.invalidateConfig("Previous settings could not be migrated safely. Requests are paused until settings are saved.")}}
-        onLoadFailed:function(error) {
-            if(error===FileViewError.FileNotFound && !root.legacySeen){root.configLoaded=true;root.details();root.refresh();root.refreshInbox()}
-            else root.invalidateConfig("Previous settings could not be read. Requests are paused to protect your connection policy.")
-        }
     }
     property FileView uriOwnership: FileView {
         path:root.dataDirectory+"/native/uri-owned";printErrors:false;preload:true;watchChanges:true

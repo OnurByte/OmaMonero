@@ -17,8 +17,8 @@ jobs:
           python-version: '3.12'
       - run: npm ci --ignore-scripts
       - run: npm run check
-      - run: git diff --exit-code -- qml/v0_4_2/generated/Core.js
-      - run: node --test tests/status.test.cjs
+      - run: git diff --exit-code -- qml/v0_4_3/generated/Core.js
+      - run: npm run test:presentation
       - run: python3 -m unittest discover -s tests -p '*_test.py'
       - run: python3 scripts/check-contract.py
       - run: python3 scripts/package.py
@@ -29,4 +29,4 @@ jobs:
           version=$(node -p 'JSON.parse(require("fs").readFileSync("manifest.json")).version')
           gh release create "v${version}" "dist/omamonero-plugin-${version}.tar.gz" dist/SHA256SUMS \
             --target "$GITHUB_SHA" --title "OmaMonero ${version}" \
-            --notes "Native TypeScript/QML Omarchy plugin. Install and manage through the official plugin manager. No OmaMonero backend, service, Rust binary, Python installer or user build step. External prices are opt-in. Marketplace verification is separate and is not claimed by this release."
+            --notes "Native TypeScript/QML Omarchy plugin. Install and manage through the official plugin manager. No OmaMonero backend, service, Rust binary, Python installer or user build step. Public prices are enabled by default and can be paused in Settings. Marketplace verification is separate and is not claimed by this release."

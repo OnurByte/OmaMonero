@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+const manifest=JSON.parse(readFileSync('manifest.json','utf8'));
+const path=manifest.entryPoints.barWidget.replace('BarWidget.qml','generated/Core.js');
+const context: any=vm.createContext({});
+vm.runInContext('Object.hasOwn=undefined;String.prototype.replaceAll=undefined;BigInt=undefined',context);
+vm.runInContext(readFileSync(path,'utf8').replace(/^\.pragma library\n/,''),context);
+const config=context.OmaCore.validateConfig({network:'stagenet',market_enabled:false,modules:{watch_only_confirmed:true}});
+assert.equal(config.network,'stagenet');assert.equal(config.market_enabled,false);assert.equal(config.modules.watch_only_confirmed,true);
+assert.equal(context.OmaCore.legacyConfig,undefined);
+assert.equal(context.OmaCore.marketLabel({state:'disabled'}),'Paused');
+assert.equal(context.OmaCore.atomicLabel('18446744073709551615'),'18446744.073709551615 XMR');
+console.log('GENERATED_QML_COMPAT_PASS: JSON settings and TS presentation without Object.hasOwn/replaceAll/BigInt');

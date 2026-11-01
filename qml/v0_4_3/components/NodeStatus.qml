@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Commons
 import qs.Commons as Commons
-import "../Status.js" as Status
+import "../generated/Core.js" as Generated
 
 ColumnLayout {
     id: root
@@ -15,8 +15,8 @@ ColumnLayout {
     Metric { Layout.fillWidth: true; label: "Peers · in / out"; value: root.node ? root.node.incoming_peers + " / " + root.node.outgoing_peers : "—" }
     Metric { Layout.fillWidth: true; label: "RPC latency"; value: root.node ? root.node.latency_ms + " ms" : "—" }
     Metric { Layout.fillWidth: true; label: "Daemon version"; value: root.node && root.node.version ? root.node.version : "Unavailable" }
-    Metric { Layout.fillWidth: true; label: "Database size"; value: root.node ? Status.bytes(root.node.database_bytes) : "—" }
-    Metric { Layout.fillWidth: true; label: "Node disk free"; value: root.node ? Status.bytes(root.node.free_bytes) : "—" }
+    Metric { Layout.fillWidth: true; label: "Database size"; value: root.node ? Generated.api().bytes(root.node.database_bytes) : "—" }
+    Metric { Layout.fillWidth: true; label: "Node disk free"; value: root.node ? Generated.api().bytes(root.node.free_bytes) : "—" }
     Text {
         Layout.fillWidth: true
         visible: !!root.node && root.node.untrusted === true

@@ -4,7 +4,7 @@ import QtQuick.Layouts
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Ui
-import "../Status.js" as Status
+import "../generated/Core.js" as Generated
 
 ColumnLayout {
     id: root
@@ -18,7 +18,7 @@ ColumnLayout {
     readonly property var spaces: Style.spacing
     readonly property bool ready: market.state === "ready"
     readonly property bool hasCandles: ready && Array.isArray(market.candles) && market.candles.length>1
-    readonly property color trendColor: Status.trendColor(ready?market.change_percent:NaN)
+    readonly property color trendColor: Generated.api().trendColor(ready?market.change_percent:NaN)
     readonly property var detailPoint: chart.hoverPoint || chart.latestPoint
     signal intervalRequested(int seconds)
     signal expandRequested()
@@ -37,7 +37,7 @@ ColumnLayout {
         ColumnLayout {
             visible:root.ready
             spacing:0
-            Text { text:root.ready?Status.changeLabel(root.market.change_percent):"";color:root.trendColor;font.family:root.typography.family;font.pixelSize:root.typography.heading }
+            Text { text:root.ready?Generated.api().changeLabel(root.market.change_percent):"";color:root.trendColor;font.family:root.typography.family;font.pixelSize:root.typography.heading }
             Text { Layout.alignment:Qt.AlignRight;text:"24h change";color:Commons.Color.foreground;opacity:0.8;font.family:root.typography.family;font.pixelSize:Math.max(root.typography.bodySmall,Style.space(11)) }
         }
     }
