@@ -19,7 +19,7 @@ jobs:
           python-version: '3.12'
       - run: npm ci --ignore-scripts
       - run: npm run check
-      - run: git diff --exit-code -- qml/v0_4_0/generated/Core.js
+      - run: git diff --exit-code -- qml/v0_4_1/generated/Core.js
       - run: npm audit --audit-level=moderate
       - run: node --test tests/status.test.cjs
       - run: python3 scripts/check-contract.py
@@ -36,7 +36,7 @@ jobs:
           cmp /tmp/first-checksums dist/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: omamonero-plugin-0.4.0
+          name: omamonero-plugin-0.4.1
           path: |
-            dist/omamonero-plugin-0.4.0.tar.gz
+            dist/omamonero-plugin-0.4.1.tar.gz
             dist/SHA256SUMS

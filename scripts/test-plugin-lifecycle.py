@@ -10,18 +10,20 @@ import tempfile
 import time
 
 parser=argparse.ArgumentParser()
+parser.add_argument('--working-frontend',action='store_true',help='Test uncommitted frontend files after official installation')
+parser.add_argument('--upgrade-from',default='7cad7ce',help='Previous commit for the migration case')
 parser.add_argument('--source-url',help='Use this published source for the fresh-install case')
 args=parser.parse_args()
 root=Path(__file__).resolve().parents[1]
 id='io.github.onurbyte.omamonero'
 omarchy=Path(os.environ.get('OMARCHY_PATH','/usr/share/omarchy'))
 head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
-legacy=subprocess.check_output(['git','rev-parse','7cad7ce'],cwd=root,text=True).strip()
+legacy=subprocess.check_output(['git','rev-parse',args.upgrade_from],cwd=root,text=True).strip()
 with tempfile.TemporaryDirectory(prefix='omamonero-manager-') as folder:
     base=Path(folder);upstream=base/'upstream.git'
     subprocess.run(['git','clone','--quiet','--bare',str(root),str(upstream)],check=True)
     subprocess.run(['git','--git-dir',str(upstream),'symbolic-ref','HEAD','refs/heads/release-test'],check=True)
-    for migration in (False,True):
+    for migration in ((False,) if args.working_frontend else (False,True)):
         subprocess.run(['git','--git-dir',str(upstream),'update-ref','refs/heads/release-test',legacy if migration else head],check=True)
         case=base/('upgrade' if migration else 'fresh');case.mkdir();home=case/'home';home.mkdir();session=case/'runtime';session.mkdir(mode=0o700);shell=case/'host/shell';shell.mkdir(parents=True)
         for name in ('Commons','Ui'):shutil.copytree(omarchy/'shell'/name,shell/name)
@@ -50,11 +52,17 @@ with tempfile.TemporaryDirectory(prefix='omamonero-manager-') as folder:
             log.flush();log.seek(0);raise AssertionError('Lifecycle observation timed out\n'+log.read())
         def widget_ready():
             data=json.loads(run('omarchy-shell','shell','widgetInfo'))
-            return data if data.get('view') and data['view'].get('privacy') and '/v0_4_0/' in data.get('source','') else None
+            return data if data.get('ready') and data.get('view') and data['view'].get('privacy') and '/v0_4_1/' in data.get('source','') else None
         try:
             eventually(lambda:run('omarchy-shell','shell','ping')=='ok')
-            run('omarchy','plugin','add',str(upstream) if migration or not args.source_url else args.source_url,'--enable','--yes')
+            run('omarchy','plugin','add',str(upstream) if migration or not args.source_url else args.source_url,*([] if args.working_frontend else ['--enable']),'--yes')
             installed=home/'.config/omarchy/plugins'/id
+            if args.working_frontend and not migration:
+                shutil.copytree(root/'qml',installed/'qml',dirs_exist_ok=True)
+                shutil.copy(root/'manifest.json',installed/'manifest.json')
+                run('omarchy-shell','shell','rescanPlugins')
+                eventually(lambda:json.loads(run('omarchy','plugin','list','--json')))
+                run('omarchy','plugin','enable',id)
             eventually(lambda:json.loads(run('omarchy','plugin','list','--json'))[0]['enabled'])
             if migration:
                 subprocess.run(['git','--git-dir',str(upstream),'update-ref','refs/heads/release-test',head],check=True)

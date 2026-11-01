@@ -31,7 +31,7 @@ QtObject {
     readonly property string configDirectory: (Quickshell.env("XDG_CONFIG_HOME") || home + "/.config") + "/omamonero"
     readonly property string dataDirectory: (Quickshell.env("XDG_DATA_HOME") || home + "/.local/share") + "/omamonero"
     readonly property string runtimeDirectory: Quickshell.env("XDG_RUNTIME_DIR") + "/omamonero-native"
-    readonly property string helper: Qt.resolvedUrl("native.sh").toString().replace(/^file:\/\//, "")
+    readonly property string helper: core.nativePath(String(Qt.resolvedUrl("native.sh")))
     readonly property var view: ({state:nodeTime && now-nodeTime>Math.max(15,config.poll_interval_secs*3)?"stale":nodeData.state,
         message:nodeTime && now-nodeTime>Math.max(15,config.poll_interval_secs*3)?"Node data is stale":nodeData.state==="online"?"Node online":nodeData.state==="syncing"?"Node syncing":"Node offline · optional",
         node:nodeTime && now-nodeTime>Math.max(15,config.poll_interval_secs*3)?null:nodeData,

@@ -21,6 +21,6 @@ QtObject {
         function setPluginEnabled(id:string,enabled:string):string{return root.registry.setEnabled(id,enabled==="true")?"ok":"unknown"}
         function enablePlugin(id:string,placement:string):string{return root.registry.setEnabled(id,true,JSON.parse(placement||"{}"))?"ok":root.registry.lastEnableError||"unknown"}
         function listPlugins():string{const out=[];for(const id in root.registry.installedPlugins){const m=root.registry.installedPlugins[id];out.push({id:id,name:m.name,kinds:m.kinds,enabled:root.registry.inBar(id),firstParty:false})}return JSON.stringify(out)}
-        function widgetInfo():string{return JSON.stringify({status:root.widget.status,source:String(root.widget.source),view:root.widget.item?root.widget.item.view:null})}
+        function widgetInfo():string{return JSON.stringify({status:root.widget.status,source:String(root.widget.source),view:root.widget.item?root.widget.item.view:null,ready:root.widget.item?root.widget.item.ready:false})}
     }
 }

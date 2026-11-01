@@ -24,3 +24,7 @@ Not claimed:
 - An independent P2P routing audit, spendable-balance guarantee or official verification badge.
 
 The old user service is never disabled automatically. Existing TOML settings and the original receiving address remain intact; saving writes the new private JSON configuration. Optional URI integration preserves a restoration receipt and fails removal safely if restoration cannot be verified.
+
+## Superseded by the 0.4.1 runtime-path correction
+
+A later check in the long-running real desktop shell exposed a test gap: Quickshell can supply an external plugin URL with a `qs:` scheme, while the 0.4.0 helper-path conversion only handled `file:`. The old manager test checked widget presence but did not require completed settings initialization. Consequently the checks above did not prove the live helper launch. Version 0.4.1 adds tested local URL conversion and requires actual native readiness in the manager lifecycle test. Do not treat the 0.4.0 candidate evidence as proof that its live helper launch worked.

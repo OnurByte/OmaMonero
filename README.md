@@ -13,7 +13,7 @@ A native Monero widget for Omarchy Quattro. TypeScript runs inside the existing 
 
 ## Install and use
 
-Open the official Omarchy plugin manager, add `https://github.com/OnurByte/OmaMonero.git`, and enable OmaMonero. Open the XMR widget in your existing bar. All settings, diagnostics, payments and removal stay in this panel. The repository must contain the 0.4.0 release before installing it from that URL; a local checkout can be validated before publication.
+Open the official Omarchy plugin manager, add `https://github.com/OnurByte/OmaMonero.git`, and enable OmaMonero. Open the XMR widget in your existing bar. All settings, diagnostics, payments and removal stay in this panel. The repository must contain the 0.4.1 release before installing it from that URL; a local checkout can be validated before publication.
 
 The default configuration contacts only numeric loopback Monero RPC. External prices are off until you explicitly enable **XMR / USD · 24h** in Settings. Choose local, HTTPS direct, Tor or I2P policy there. Tor/I2P uses a local SOCKS5h proxy with remote DNS and never falls back to direct access. Wallet and miner RPC always remain on numeric loopback.
 
@@ -32,6 +32,8 @@ Price source and freshness are shown with the chart. Stale, invalid or unavailab
 Monitoring and notifications run while Quickshell is active. No separate OmaMonero daemon runs after the shell closes. Watch-only is a user confirmation; balances may overstate spendable funds without imported key images. Seed phrases and private spend keys are never requested.
 
 The obsolete v0.3.2 standalone bundle is retired: private payment requests could appear in process listings. Do not use it.
+
+Version 0.4.1 corrects native helper paths in long-running Quickshell sessions and supersedes 0.4.0.
 
 ## Updating from 0.3.x
 
