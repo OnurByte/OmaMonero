@@ -11,15 +11,19 @@ QtObject {
     property var config: core.defaults()
     property double now: Date.now() / 1000
     property var nodeData: ({state:"offline",error:"connection"})
-    property var marketData: ({state:"disabled"})
+    property var marketData: ({state:"loading"})
     property var modulesData: ({wallet:{state:"disabled"},xmrig:{state:"disabled"},p2pool:{state:"disabled"}})
     property int nodeTime: 0
     property int epoch: 0
     property bool polling: false
     property double lastMarket: 0
+    property int chartIntervalSecs: 900
+    property bool marketBusy: false
     property bool ready: false
     property bool configLoaded: false
     property bool configError: false
+    property bool jsonSeen: false
+    property bool legacySeen: false
     readonly property bool pendingSetup: false
     readonly property bool controlsAvailable: ready
     property var setup: ({state:"idle"})
@@ -81,8 +85,26 @@ QtObject {
             })
         })
     }
-    function refresh() {
-        if(!ready || !configLoaded || configError || polling) return
+    function selectChartInterval(seconds) {
+        if(marketBusy || config.market_source.url || [300,900,1800,3600].indexOf(seconds)<0)return
+        chartIntervalSecs=seconds
+        refresh(true)
+    }
+    function refreshMarket() {
+        if(config.market_enabled && !marketBusy && now-lastMarket>=120) {
+            lastMarket=now;marketBusy=true
+            if(marketData.state!=="ready")marketData={state:"loading"}
+            const source=config.market_source
+            const interval=chartIntervalSecs
+            const url=source.url || "https://api.kraken.com/0/public/OHLC?pair=XMRUSD&interval="+Math.round(interval/60)
+            request(url,undefined,{},false,function(v){marketBusy=false;try{marketData=source.url?core.customMarket(v,Math.floor(root.now),source):core.krakenMarket(v,Math.floor(root.now),interval)}catch(e){marketData={state:"unavailable"}}})
+        }
+    }
+    function refresh(forceMarket) {
+        if(forceMarket === true)lastMarket=0
+        if(!ready || !configLoaded || configError) return
+        refreshMarket()
+        if(polling)return
         polling=true
         const started=Date.now()
         request(config.endpoint+"/json_rpc","get_info",{},false,function(v) {
@@ -90,12 +112,6 @@ QtObject {
             nodeTime=Math.floor(root.now)
             pollWallet()
         })
-        if(config.market_enabled && now-lastMarket>=120) {
-            lastMarket=now
-            const source=config.market_source
-            const url=source.url || "https://api.kraken.com/0/public/OHLC?pair=XMRUSD&interval=60"
-            request(url,undefined,{},false,function(v){try{marketData=source.url?core.customMarket(v,Math.floor(root.now),source):core.krakenMarket(v,Math.floor(root.now))}catch(e){marketData={state:"unavailable"}}})
-        }
         if(config.modules.xmrig_url) request(config.modules.xmrig_url+"/2/summary",undefined,{},true,function(v){try{setModule("xmrig",core.xmrig(v,Math.floor(root.now)))}catch(e){setModule("xmrig",{state:"unavailable"})}})
         else setModule("xmrig",{state:"disabled"})
         if(config.modules.p2pool_directory && !poolReader.running){poolReader.generation=epoch;poolReader.output="";poolReader.command=["/bin/bash",helper,"p2pool",config.modules.p2pool_directory];poolReader.running=true}
@@ -103,7 +119,8 @@ QtObject {
     }
     function applyConfig(next) {
         const checked=core.validateConfig(next)
-        epoch++;http.cancel();poolReader.running=false;config=checked;configError=false;polling=false;lastMarket=0;nodeTime=0;nodeData={state:"offline",error:"connection"};marketData={state:config.market_enabled?"unavailable":"disabled"};modulesData={wallet:{state:"disabled"},xmrig:{state:"disabled"},p2pool:{state:"disabled"}};tracker=core.incomingTracker();setupData=Object.assign({},setupData,{proof:null});paymentData=({});incomingRequests=[]
+        const revalidateIncoming=!configLoaded || config.network!==checked.network
+        epoch++;http.cancel();poolReader.running=false;config=checked;configError=false;polling=false;marketBusy=false;lastMarket=0;nodeTime=0;nodeData={state:"offline",error:"connection"};marketData={state:config.market_enabled?"unavailable":"disabled"};modulesData={wallet:{state:"disabled"},xmrig:{state:"disabled"},p2pool:{state:"disabled"}};tracker=core.incomingTracker();setupData=Object.assign({},setupData,{proof:null});paymentData=({});if(revalidateIncoming)incomingRequests=[]
     }
     function save(next) {
         applyConfig(next)
@@ -116,6 +133,7 @@ QtObject {
         if(action==="proof" || action==="clear-proof")setupData=Object.assign({},setupData,{proof:null})
         try {
             if(action==="clear-proof" || action==="clear-payment")return
+            if(action==="market-enable"){save(Object.assign({},config,{market_enabled:true}));setup={state:"done"};return}
             if(action==="info")details()
             else if(action==="save")save(Object.assign({},config,{endpoint:endpoint,market_enabled:marketEnabled,market_source:payload.market_source || config.market_source,transport:payload.transport || config.transport,proxy:payload.proxy===undefined?config.proxy:payload.proxy,network:payload.network || config.network}))
             else if(action==="module-config")save(Object.assign({},config,{modules:payload}))
@@ -131,7 +149,7 @@ QtObject {
             }
             else if(action==="wallet") {if(["feather","monero_gui"].indexOf(payload.wallet)<0)return;Quickshell.execDetached(["/bin/bash",helper,"wallet",payload.wallet]);details("Wallet launch requested. If it is not installed, use Omarchy’s application manager.")}
             else if(action==="register-uri" || action==="remove" || action==="legacy-cleanup") {osAction(action);return}
-            else if(action==="diagnostics") {details("TypeScript core active in Quickshell. No OmaMonero backend or service required. Node and module checks are read-only. P2P route remains unverified.");refresh()}
+            else if(action==="diagnostics") {details("Refreshing read-only connections. No node is started.");refresh(true)}
             setup={state:"done"}
         } catch(e) {fail(e.message || "Action could not complete")}
     }
@@ -142,9 +160,17 @@ QtObject {
         actionJob.command=["/bin/bash",helper,action].concat(arg?[arg]:[])
         actionJob.running=true
     }
+    function invalidateConfig(message) {
+        epoch++;http.cancel();poolReader.running=false;polling=false;marketBusy=false
+        nodeData={state:"offline",error:"invalid_response"};marketData={state:"unavailable"}
+        modulesData={wallet:{state:"unavailable"},xmrig:{state:"unavailable"},p2pool:{state:"unavailable"}}
+        configError=true;configLoaded=true
+        fail(message)
+    }
     function loadConfig() {
-        try {const next=core.validateConfig(JSON.parse(configFile.text()));if(JSON.stringify(next)!==JSON.stringify(config))applyConfig(next);configError=false;configLoaded=true;details(setupData.message);refresh();inbox.reload()}
-        catch(e){epoch++;http.cancel();poolReader.running=false;polling=false;nodeData={state:"offline",error:"invalid_response"};marketData={state:"unavailable"};modulesData={wallet:{state:"unavailable"},xmrig:{state:"unavailable"},p2pool:{state:"unavailable"}};configError=true;configLoaded=true;fail("Settings are invalid. Network requests are paused; correct the settings before saving.")}
+        jsonSeen=true
+        try {const next=core.validateConfig(JSON.parse(configFile.text()));if(JSON.stringify(next)!==JSON.stringify(config))applyConfig(next);configError=false;configLoaded=true;details(setupData.message);refresh();refreshInbox()}
+        catch(e){invalidateConfig("Settings are invalid. Requests are paused; correct the settings before saving.")}
     }
     property Http http: Http {}
     property Process initJob: Process {
@@ -152,22 +178,29 @@ QtObject {
         running:true
         stdout:StdioCollector {}
         stderr:StdioCollector {}
-        onExited:function(code){if(code!==0){root.fail("Private settings directory could not be prepared");return}root.ready=true;configFile.reload()}
+        onExited:function(code){if(code!==0){root.marketData={state:"unavailable"};root.fail("Private settings directory could not be prepared");return}root.ready=true;configFile.reload();configFile.text()}
     }
     property FileView configFile: FileView {
         path:root.configDirectory+"/config.json"
-        printErrors:false;watchChanges:true
+        printErrors:false;watchChanges:true;preload:false
         onLoaded:root.loadConfig()
         onFileChanged:reload()
-        onLoadFailed: {if(root.ready){legacyFile.reload()}}
+        onLoadFailed:function(error) {
+            if(!root.ready)return
+            if(error===FileViewError.FileNotFound && !root.jsonSeen){legacyFile.reload();legacyFile.text()}
+            else root.invalidateConfig("Saved settings could not be read. Requests are paused to protect your connection policy.")
+        }
         onSaved:root.details("Settings saved.")
         onSaveFailed:root.fail("Settings could not be saved. Your previous file was retained.")
     }
     property FileView legacyFile: FileView {
         path:root.configDirectory+"/config.toml"
-        printErrors:false
-        onLoaded: {try{root.applyConfig(core.legacyConfig(text()));root.configLoaded=true;root.details("Previous settings loaded. Save to migrate; the old service is retained until you explicitly stop it.");root.refresh();inbox.reload()}catch(e){root.configError=true;root.configLoaded=true;root.fail("Previous settings could not be migrated safely. Network requests are paused until settings are saved.")}}
-        onLoadFailed:{root.configLoaded=true;root.details();root.refresh();inbox.reload()}
+        printErrors:false;preload:false
+        onLoaded: {root.legacySeen=true;try{root.applyConfig(core.legacyConfig(text()));root.configLoaded=true;root.details("Previous settings loaded. Save to migrate; the old service is retained until you explicitly stop it.");root.refresh();refreshInbox()}catch(e){root.invalidateConfig("Previous settings could not be migrated safely. Requests are paused until settings are saved.")}}
+        onLoadFailed:function(error) {
+            if(error===FileViewError.FileNotFound && !root.legacySeen){root.configLoaded=true;root.details();root.refresh();root.refreshInbox()}
+            else root.invalidateConfig("Previous settings could not be read. Requests are paused to protect your connection policy.")
+        }
     }
     property FileView uriOwnership: FileView {
         path:root.dataDirectory+"/native/uri-owned";printErrors:false;preload:true;watchChanges:true
@@ -179,17 +212,23 @@ QtObject {
         path:root.configDirectory+"/receive.json";printErrors:false;preload:true
         onLoaded:{try{root.setupData=Object.assign({},root.setupData,{receive_address:JSON.parse(text()).address || ""})}catch(e){}}
     }
-    property FileView inbox: FileView {
-        path:root.runtimeDirectory+"/inbox";printErrors:false;preload:true;watchChanges:true
-        onFileChanged:reload()
-        onLoaded: {
-            const rows=text().split("\n").filter(function(s){return !!s}).slice(-20), requests=[]
+    function refreshInbox() {
+        inbox.reload()
+        if(inbox.loaded)readInbox(inbox.text())
+    }
+    function readInbox(raw) {
+            const rows=raw.split("\n").filter(function(s){return !!s}).slice(-20), requests=[]
             for(let i=0;i<rows.length;i++) {const tab=rows[i].indexOf("\t");if(tab<1)continue;try{const p=core.payment({uri:rows[i].slice(tab+1)},root.config.network);p.incoming_request=true;p.request_id=rows[i].slice(0,tab);requests.push({id:p.request_id,created_at:Number(p.request_id)/1e9,payment:p})}catch(e){}}
             const previous=root.incomingRequests.length?root.incomingRequests[root.incomingRequests.length-1].id:""
             root.incomingRequests=requests
             if(requests.length && requests[requests.length-1].id!==previous)root.paymentData=requests[requests.length-1].payment
-        }
     }
+    property FileView inbox: FileView {
+        path:root.runtimeDirectory+"/inbox";printErrors:false;preload:true;watchChanges:true
+        onFileChanged:reload()
+        onLoaded:root.readInbox(text())
+    }
+
     property Process actionJob: Process {
         property string action:""
         stdout:StdioCollector {}

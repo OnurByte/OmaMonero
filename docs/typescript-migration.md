@@ -27,3 +27,6 @@ External remaining work: publish the reviewed commit, clean official-manager ins
 
 
 0.4.1 correction: live installation revealed `qs:` resource URLs were not converted for the native helper. Added explicit local URL conversion and readiness assertions, retained the versioned QML directory to invalidate old engine caches, and kept offline bar text compact. Earlier widget-presence-only lifecycle evidence is insufficient for helper readiness; the correction is documented in verification-0.4.1.md.
+
+
+0.4.2 user-directed UX scope: public prices default on, optional node hidden from the bar's primary status, Price/Receive/More hierarchy, readable advanced OHLC/volume chart, bounded zoom/pan with a timestamp anchor, compact About hit target and richer information. The user reaffirmed keeping the existing banner/icon. Fresh review findings were fixed with regressions: config I/O fails closed, blank custom source cannot silently become Kraken, and panned history does not roll under the reader. Actual screenshot capture and release remain the final delivery steps.

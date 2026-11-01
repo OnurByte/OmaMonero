@@ -9,19 +9,41 @@
   <a href="https://github.com/OnurByte/OmaMonero/actions/workflows/ci.yml"><img src="https://github.com/OnurByte/OmaMonero/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
 </p>
 
-A native Monero widget for Omarchy Quattro. TypeScript runs inside the existing Quickshell bar and panel. No OmaMonero backend, service, Rust binary, Python installer, Node.js or npm is required by users.
+XMR/USD prices, an advanced market chart and local payment tools in your existing Omarchy bar. No separate OmaMonero backend, service or user build step.
+
+## Monero, at a glance
+
+<p align="center">
+  <img src="docs/screenshots/bar.png" alt="Live XMR/USD price, 24-hour change and sparkline in the native Omarchy bar" width="570">
+</p>
+
+Your price stays in the bar. Open it for real candlesticks, XMR volume and a closer look at the market—without leaving your desktop.
+
+<p align="center">
+  <img src="docs/screenshots/market-panel.png" alt="OmaMonero native market panel with real Kraken candles, volume and readable axes" width="630">
+</p>
+
+Scroll to zoom, drag through history, or switch to a line chart. Price comes first; receiving and optional local tools are one tab away.
+
+<p align="center">
+  <img src="docs/screenshots/about-panel.png" alt="OmaMonero About panel explaining price source, privacy and local payment tools" width="630">
+</p>
+
+Actual Omarchy captures, 1 November 2026. Market values change; the panel shows their source and update time. Original banner and Monero artwork retained.
 
 ## Install and use
 
-Open the official Omarchy plugin manager, add `https://github.com/OnurByte/OmaMonero.git`, and enable OmaMonero. Open the XMR widget in your existing bar. All settings, diagnostics, payments and removal stay in this panel. The repository must contain the 0.4.1 release before installing it from that URL; a local checkout can be validated before publication.
+Open the official Omarchy plugin manager, add `https://github.com/OnurByte/OmaMonero.git`, and enable OmaMonero. Open the XMR widget in your existing bar. All settings, diagnostics, payments and removal stay in this panel.
 
-The default configuration contacts only numeric loopback Monero RPC. External prices are off until you explicitly enable **XMR / USD · 24h** in Settings. Choose local, HTTPS direct, Tor or I2P policy there. Tor/I2P uses a local SOCKS5h proxy with remote DNS and never falls back to direct access. Wallet and miner RPC always remain on numeric loopback.
+Monero RPC defaults to numeric loopback. XMR/USD prices and the 24-hour chart are enabled by default, as explicitly requested. You can pause public prices in Settings. Choose local, HTTPS direct, Tor or I2P policy there. Tor/I2P uses a local SOCKS5h proxy with remote DNS and never falls back to direct access. Wallet and miner RPC always remain on numeric loopback.
 
 Price source and freshness are shown with the chart. Stale, invalid or unavailable data is explicit. The widget does not start a Monero node, Tor, I2P, wallet RPC or miner for you.
 
 ## Features
 
-- XMR/USD sparkline, trailing 24-hour change and detailed chart; Kraken or a configured HTTPS JSON source.
+- XMR/USD sparkline and trailing 24-hour change, enabled by default.
+- Native candle/line chart with real Kraken OHLC and XMR volume, 5m/15m/1h intervals, crosshair inspection, pointer/keyboard zoom, bounded history panning and an expanded view. Custom close-only sources use a line chart.
+- A simple Price / Receive / More hierarchy; technical settings stay under Advanced.
 - Monero node synchronization, peers, network, latency and storage information.
 - Local watch-only wallet balance and latest 20 incoming transfers from a bounded 720-block window. Atomic amounts retain all 12 decimal places.
 - Local XMRig API and P2Pool `local/stratum` data API telemetry.
@@ -33,7 +55,7 @@ Monitoring and notifications run while Quickshell is active. No separate OmaMone
 
 The obsolete v0.3.2 standalone bundle is retired: private payment requests could appear in process listings. Do not use it.
 
-Version 0.4.1 corrects native helper paths in long-running Quickshell sessions and supersedes 0.4.0.
+Version 0.4.2 adds the price-first interface and advanced native chart, and includes the native runtime fixes from 0.4.1.
 
 ## Updating from 0.3.x
 

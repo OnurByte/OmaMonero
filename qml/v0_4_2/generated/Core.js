@@ -2406,7 +2406,10 @@ var OmaCore = (() => {
   // src/core/index.ts
   var index_exports = {};
   __export(index_exports, {
+    anchoredChartOffset: () => anchoredChartOffset,
     atomic: () => atomic,
+    chartWindow: () => chartWindow,
+    chartZoom: () => chartZoom,
     customMarket: () => customMarket,
     defaults: () => defaults,
     ensure: () => ensure,
@@ -2457,7 +2460,7 @@ var OmaCore = (() => {
     return o.url;
   }
   function defaults() {
-    return { endpoint: "http://127.0.0.1:18081", network: "mainnet", transport: "local", proxy: "", market_enabled: false, poll_interval_secs: 5, timeout_ms: 3e3, market_source: { name: "Kraken", url: "", price_pointer: "/price", points_pointer: "/points", timestamp_pointer: "/timestamp", point_price_pointer: "/price", interval_secs: 3600 }, modules: { wallet_rpc: "", watch_only_confirmed: false, notify_payments: false, xmrig_url: "", p2pool_directory: "" } };
+    return { endpoint: "http://127.0.0.1:18081", network: "mainnet", transport: "local", proxy: "", market_enabled: true, poll_interval_secs: 5, timeout_ms: 3e3, market_source: { name: "Kraken", url: "", price_pointer: "/price", points_pointer: "/points", timestamp_pointer: "/timestamp", point_price_pointer: "/price", interval_secs: 3600 }, modules: { wallet_rpc: "", watch_only_confirmed: false, notify_payments: false, xmrig_url: "", p2pool_directory: "" } };
   }
   function publicUrl(raw) {
     ensure(typeof raw === "string" && /^https:\/\/[A-Za-z0-9.-]+(?::[0-9]{1,5})?(?:\/[A-Za-z0-9._~!$&'()*+,;=:@%/?-]*)?$/.test(raw) && raw.length <= 2048, "Use a public HTTPS URL without credentials or fragment");
@@ -2670,22 +2673,27 @@ var OmaCore = (() => {
   }
   function krakenMarket(v, now, interval = 3600) {
     var _a;
+    ensure([300, 900, 1800, 3600].includes(interval), "Unsupported candle interval");
     ensure(Array.isArray(v.error) && v.error.length === 0);
     const rows = (_a = v.result) == null ? void 0 : _a.XXMRZUSD;
     ensure(Array.isArray(rows) && rows.length >= 2 && rows.length <= 721);
-    const points = [];
+    const points = [], candles = [];
     let previous = 0;
     rows.forEach((r, i) => {
       var _a2;
       ensure(Array.isArray(r) && r.length === 8 && integer(r[0]) && r[0] > previous && r[0] <= now && (!previous || r[0] - previous <= interval * 2));
       previous = r[0];
-      if (i === 0) points.push({ timestamp: r[0], price: price(r[1]) });
+      const open = price(r[1]), high = price(r[2]), low = price(r[3]), close = price(r[4]);
+      ensure(high >= Math.max(open, close) && low <= Math.min(open, close), "Invalid candle range");
+      ensure((typeof r[6] === "string" && r[6].trim() !== "" || typeof r[6] === "number") && Number.isFinite(+r[6]) && +r[6] >= 0 && +r[6] <= 1e18 && integer(r[7]), "Invalid candle volume");
+      candles.push({ timestamp: r[0], open, high, low, close, volume: +r[6], trades: r[7], complete: i < rows.length - 1 });
+      if (i === 0) points.push({ timestamp: r[0], price: open });
       const end = i === rows.length - 1 ? now : r[0] + interval;
       ensure(end <= now && (i !== rows.length - 1 || now - r[0] <= interval + 180));
       if (((_a2 = points[points.length - 1]) == null ? void 0 : _a2.timestamp) === end) points.pop();
-      points.push({ timestamp: end, price: price(r[4]) });
+      points.push({ timestamp: end, price: close });
     });
-    return quote2(points, points[points.length - 1].price, now, "Kraken", interval);
+    return __spreadProps(__spreadValues({}, quote2(points, points[points.length - 1].price, now, "Kraken", interval)), { candles });
   }
 
   // src/core/modules.ts
@@ -3760,6 +3768,51 @@ ${codeblock}`, options);
     const c = parse(raw);
     if (c.proxy === null) delete c.proxy;
     return validateConfig(c);
+  }
+
+  // src/core/chart.ts
+  function bounded(length, count, offset) {
+    ensure(Number.isSafeInteger(length) && length >= 0 && length <= 1e3, "Invalid chart history");
+    if (!length) return { count: 0, offset: 0 };
+    const n = Math.max(Math.min(12, length), Math.min(length, Math.round(Number.isFinite(count) ? count : length)));
+    return { count: n, offset: Math.max(0, Math.min(length - n, Math.round(Number.isFinite(offset) ? offset : 0))) };
+  }
+  function chartWindow(series, count, offset) {
+    var _a, _b;
+    ensure(Array.isArray(series), "Invalid chart series");
+    const b = bounded(series.length, count, offset), end = series.length - b.offset, start = end - b.count, rows = series.slice(start, end);
+    if (!rows.length) return { rows: [], count: 0, offset: 0, startIndex: 0, endIndex: 0, low: 0, high: 1, maxVolume: 0 };
+    let low = Infinity, high = -Infinity, maxVolume = 0;
+    for (const row of rows) {
+      const l = (_a = row.low) != null ? _a : row.price, h = (_b = row.high) != null ? _b : row.price;
+      ensure(typeof l === "number" && Number.isFinite(l) && l > 0 && typeof h === "number" && Number.isFinite(h) && h >= l, "Invalid chart prices");
+      low = Math.min(low, l);
+      high = Math.max(high, h);
+      if (typeof row.volume === "number" && Number.isFinite(row.volume) && row.volume >= 0) maxVolume = Math.max(maxVolume, row.volume);
+    }
+    const margin = Math.max((high - low) * 0.08, high * 1e-4);
+    return __spreadProps(__spreadValues({}, b), { rows, startIndex: start, endIndex: end, low: Math.max(0, low - margin), high: high + margin, maxVolume });
+  }
+  function chartZoom(length, count, offset, factor, anchor) {
+    ensure(Number.isFinite(factor) && factor > 0 && Number.isFinite(anchor), "Invalid chart zoom");
+    const old = bounded(length, count, offset);
+    if (!length) return old;
+    const next = bounded(length, old.count * factor, 0), a = Math.max(0, Math.min(1, anchor));
+    const point = length - old.offset - old.count + (old.count - 1) * a;
+    const start = Math.max(0, Math.min(length - next.count, Math.round(point - (next.count - 1) * a)));
+    return { count: next.count, offset: length - start - next.count };
+  }
+  function anchoredChartOffset(series, count, timestamp) {
+    const b = bounded(series.length, count, 0);
+    if (!series.length || !Number.isFinite(timestamp)) return 0;
+    let index = 0;
+    for (let i = series.length - 1; i >= 0; i--) {
+      if (series[i].timestamp <= timestamp) {
+        index = i;
+        break;
+      }
+    }
+    return Math.max(0, Math.min(series.length - b.count, series.length - 1 - index));
   }
   return __toCommonJS(index_exports);
 })();

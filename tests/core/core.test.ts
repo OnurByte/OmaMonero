@@ -8,7 +8,7 @@ describe('payment safety',()=>{
  it('refuses ambiguous and oversized requests',()=>{expect(()=>Core.payment({uri:'monero:'+address,address},'mainnet')).toThrow();expect(()=>Core.payment({address,label:'x'.repeat(161)},'mainnet')).toThrow()});
 });
 describe('privacy transport',()=>{
- it('defaults to local only with prices off',()=>{expect(Core.defaults().market_enabled).toBe(false);expect(Core.validateConfig(Core.defaults()).transport).toBe('local')});
+ it('defaults to local node and enabled USD prices by user choice',()=>{expect(Core.defaults().market_enabled).toBe(true);expect(Core.validateConfig(Core.defaults()).transport).toBe('local')});
  it.each(['http://example.org','http://127.0.0.1@evil.org','http://localhost','file:///tmp/foo','http://127.0.0.1/a','http://127.0.0.1?x'])('rejects unsafe local origin %s',(url)=>expect(()=>Core.localOrigin(url)).toThrow());
  it('forces remote DNS and never bypasses configured proxy',()=>{const c=Core.validateConfig({...Core.defaults(),transport:'tor',endpoint:'http://node.onion:18081',proxy:'socks5h://127.0.0.1:9050'});const r=Core.request(c,c.endpoint+'/json_rpc','get_info',{});expect(r.stdin).toContain('proxy = "socks5h://127.0.0.1:9050"');expect(r.stdin).toContain('noproxy = ""');expect(r.argv.join(' ')).not.toContain('node.onion');expect(r.argv).not.toContain('--location');expect(()=>Core.validateConfig({...c,proxy:''})).toThrow()});
  it('keeps sensitive proof data out of arguments',()=>{const r=Core.request(Core.defaults(),'http://127.0.0.1:18082/json_rpc','check_tx_proof',{signature:'PRIVATE_PROOF'});expect(r.argv.join(' ')).not.toContain('PRIVATE_PROOF');expect(r.stdin).toContain('PRIVATE_PROOF');expect(r.stdin).toContain('max-filesize = 1048576')});

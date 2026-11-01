@@ -46,7 +46,7 @@ try:
         pool=base/'pool/local';pool.mkdir(parents=True)
         (pool/'stratum').write_text(json.dumps(dict(hashrate_15m=1,hashrate_1h=2,hashrate_24h=3,shares_found=4,connections=5)))
         url=f'http://127.0.0.1:{server.server_port}'
-        (config/'config.json').write_text(json.dumps(dict(endpoint=url,modules=dict(wallet_rpc=url,watch_only_confirmed=True,xmrig_url=url,p2pool_directory=str(pool.parent)))))
+        (config/'config.json').write_text(json.dumps(dict(endpoint=url,market_enabled=False,modules=dict(wallet_rpc=url,watch_only_confirmed=True,xmrig_url=url,p2pool_directory=str(pool.parent)))))
         display=os.environ.get('WAYLAND_DISPLAY','wayland-1')
         if not display.startswith('/'): display=str(Path(os.environ['XDG_RUNTIME_DIR'])/display)
         env=dict(os.environ,WAYLAND_DISPLAY=display,QT_LOGGING_RULES='qt.qml.usedbeforedeclared=false',QT_QPA_PLATFORM='wayland',HOME=str(home),XDG_CONFIG_HOME=str(home/'.config'),XDG_DATA_HOME=str(home/'.local/share'),XDG_RUNTIME_DIR=str(session))

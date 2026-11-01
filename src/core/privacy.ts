@@ -10,7 +10,7 @@ export function origin(raw: string): {scheme:string;host:string;port:string;url:
 }
 export function loopback(host:string) { return host === '[::1]' || /^127\.(?:\d{1,3}\.){2}\d{1,3}$/.test(host) && host.split('.').every(v=>+v<=255); }
 export function localOrigin(raw:string) { const o=origin(raw);ensure(o.scheme==='http' && loopback(o.host),'Use a numeric loopback HTTP origin');return o.url; }
-export function defaults(): Dict { return {endpoint:'http://127.0.0.1:18081',network:'mainnet',transport:'local',proxy:'',market_enabled:false,poll_interval_secs:5,timeout_ms:3000,market_source:{name:'Kraken',url:'',price_pointer:'/price',points_pointer:'/points',timestamp_pointer:'/timestamp',point_price_pointer:'/price',interval_secs:3600},modules:{wallet_rpc:'',watch_only_confirmed:false,notify_payments:false,xmrig_url:'',p2pool_directory:''}}; }
+export function defaults(): Dict { return {endpoint:'http://127.0.0.1:18081',network:'mainnet',transport:'local',proxy:'',market_enabled:true,poll_interval_secs:5,timeout_ms:3000,market_source:{name:'Kraken',url:'',price_pointer:'/price',points_pointer:'/points',timestamp_pointer:'/timestamp',point_price_pointer:'/price',interval_secs:3600},modules:{wallet_rpc:'',watch_only_confirmed:false,notify_payments:false,xmrig_url:'',p2pool_directory:''}}; }
 export function publicUrl(raw:string) { ensure(typeof raw==='string' && /^https:\/\/[A-Za-z0-9.-]+(?::[0-9]{1,5})?(?:\/[A-Za-z0-9._~!$&'()*+,;=:@%/?-]*)?$/.test(raw) && raw.length<=2048,'Use a public HTTPS URL without credentials or fragment');return raw; }
 export function validateConfig(input:Dict):Dict {
     const d=defaults(); const c:Dict={...d,...input,market_source:{...d.market_source,...input.market_source},modules:{...d.modules,...input.modules}};

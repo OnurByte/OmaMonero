@@ -8,8 +8,7 @@ without typing commands. Prefer user-only installation. If privilege is ever
 required, use one narrow pkexec operation during installation; never sudo and
 never elevate the GUI, daemon or plugin. Use the official Omarchy plugin manager
 and native upper-bar/popup components. Do not invent marketplace verification:
-Verified requires an actual record for the shipped commit. External prices are
-an explicit opt-in, USD/24h by the user's choice, with truthful freshness/source.
+Verified requires an actual record for the shipped commit. External XMR/USD prices and the 24h chart are enabled by default by the user's explicit 2026-11-01 correction. Keep truthful freshness/source, a simple pause control, and fail-closed configured proxies.
 
 All user flows must remain inside the existing Omarchy bar/panel. No Zenity/GTK dialogs, standalone settings app or custom icon; the user explicitly rejected those.
 

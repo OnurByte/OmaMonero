@@ -12,6 +12,7 @@ function bytes(value) {
 
 function marketView(m, now) {
     if (!m || m.state === "disabled") return {state: "disabled"}
+    if (m.state === "loading") return {state: "loading"}
     if (m.state === "unavailable") return {state: "unavailable"}
     if (m.state !== "ready" || typeof m.source !== "string" || !m.source.trim() || m.source.length > 48 || m.currency !== "USD"
         || !integer(m.fetched_at) || m.fetched_at > now + 5 || m.stale_after_secs !== 360
@@ -28,6 +29,18 @@ function marketView(m, now) {
             || typeof point.price !== "number" || !isFinite(point.price) || point.price <= 0 || point.price > 1000000000)
             return {state: "invalid"}
         previous = point.timestamp
+    }
+    if (m.candles !== undefined) {
+        if (!Array.isArray(m.candles) || m.candles.length < 2 || m.candles.length > 721) return {state:"invalid"}
+        var last=0
+        for (var c=0;c<m.candles.length;c++) {
+            var candle=m.candles[c]
+            if (!candle || !integer(candle.timestamp) || candle.timestamp<=last || candle.timestamp>m.fetched_at+5 || typeof candle.complete!=="boolean"
+                || typeof candle.volume!=="number" || !isFinite(candle.volume) || candle.volume<0 || candle.volume>1e18) return {state:"invalid"}
+            for (var k=0;k<4;k++) {var v=candle[["open","high","low","close"][k]];if(typeof v!=="number" || !isFinite(v) || v<=0 || v>1e9)return {state:"invalid"}}
+            if(candle.high<Math.max(candle.open,candle.close) || candle.low>Math.min(candle.open,candle.close))return {state:"invalid"}
+            last=candle.timestamp
+        }
     }
     return m
 }
@@ -50,4 +63,12 @@ function atomicLabel(value) {
     var whole = digits.slice(0, -12).replace(/^0+(?=[0-9])/, "")
     var fraction = digits.slice(-12).replace(/0+$/, "")
     return whole + (fraction ? "." + fraction : "") + " XMR"
+}
+
+function marketLabel(m) {
+    if (m && m.state === "ready") return "$" + m.price.toFixed(2) + " " + changeLabel(m.change_percent)
+    if (m && m.state === "loading") return "Loading…"
+    if (m && m.state === "disabled") return "Paused"
+    if (m && m.state === "stale") return "Stale"
+    return "—"
 }

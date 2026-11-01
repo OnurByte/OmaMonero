@@ -12,7 +12,7 @@ Ui.BarWidget {
     property var manifest: null
     property var pluginRegistry: null
     property var barWidgetRegistry: null
-    readonly property string nodeLabel: view.state === "online" ? "Online" : view.state === "syncing" ? "Syncing" : view.state === "offline" ? "Offline" : view.state === "stale" ? "Stale" : "Unavailable"
+    readonly property string marketLabel: Status.marketLabel(market)
     readonly property bool ready: StatusStore.ready && StatusStore.configLoaded && !StatusStore.configError
     readonly property var view: StatusStore.view
     readonly property var market: view.market
@@ -28,7 +28,7 @@ Ui.BarWidget {
     function close() { popup.close() }
     function togglePanel() { popup.toggle() }
     function closeForPopoutSwitch() { popup.closeForPopoutSwitch() }
-    function refresh() { StatusStore.refresh() }
+    function refresh() { StatusStore.refresh(true) }
 
     implicitWidth: button.implicitWidth + (vertical ? 0 : Style.space(20)) + (marketReady && !vertical ? Style.space(64) : 0)
     implicitHeight: button.implicitHeight
@@ -37,8 +37,9 @@ Ui.BarWidget {
         id: button
         anchors.fill: parent
         bar: root.bar
-        text: root.vertical ? "$XMR" : root.marketReady ? "$XMR $" + root.market.price.toFixed(2) + " " + Status.changeLabel(root.market.change_percent) : "$XMR · " + root.nodeLabel
-        tooltipText: root.view.message + (root.marketReady ? " · " + root.market.source + " XMR/USD · 24h " + Status.changeLabel(root.market.change_percent) : "")
+        text: root.vertical ? "$XMR" : "$XMR " + root.marketLabel
+        tooltipText: root.marketReady ? root.market.source + " · XMR/USD · 24h " + Status.changeLabel(root.market.change_percent) : root.market.state === "loading" ? "Loading XMR/USD prices" : root.market.state === "disabled" ? "Public prices are paused" : "Fresh XMR/USD prices are unavailable · open to retry"
+
         labelVisible: false
         Image {
             visible: !root.vertical
@@ -74,7 +75,7 @@ Ui.BarWidget {
             }
             Text {
                 visible: !root.vertical
-                text: root.marketReady ? "$" + root.market.price.toFixed(2) + " " + Status.changeLabel(root.market.change_percent) : root.nodeLabel
+                text: root.marketLabel
                 textFormat: Text.PlainText
                 font.family: button.fontFamily
                 font.pixelSize: button.fontSize
@@ -91,7 +92,7 @@ Ui.BarWidget {
             points: root.marketReady ? root.market.points : []
             lineColor: root.trendColor
         }
-        active: !root.marketReady && ["online", "syncing"].indexOf(root.view.state) < 0
+        active: root.opened
         onPressed: function(button) {
             if (button === Qt.LeftButton) root.togglePanel()
             else if (button === Qt.RightButton) root.refresh()

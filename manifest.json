@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.onurbyte.omamonero",
   "name": "OmaMonero",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "author": "OnurByte",
   "license": "MIT",
   "description": "A privacy-first Monero node companion for Omarchy.",
@@ -10,7 +10,7 @@
     "bar-widget"
   ],
   "entryPoints": {
-    "barWidget": "qml/v0_4_1/BarWidget.qml"
+    "barWidget": "qml/v0_4_2/BarWidget.qml"
   },
   "barWidget": {
     "displayName": "OmaMonero",
