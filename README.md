@@ -4,16 +4,22 @@
   <img src="docs/brand/banner-reference.png" alt="OmaMonero — Secure, private and untraceable" width="960">
 </p>
 
+XMR/USD prices, an advanced market chart and local payment tools in your existing Omarchy bar. No separate OmaMonero backend, service or user build step.
+
 <p align="center">
   <a href="https://github.com/tcballard/omarchy-badges"><img src="https://raw.githubusercontent.com/tcballard/omarchy-badges/75975e5b5bf75e7ede3764bcd2950046f7abfe2c/badges/v1/omarchy-plugin.svg" alt="Built for Omarchy: Plugin"></a>
   <a href="https://github.com/OnurByte/OmaMonero/actions/workflows/ci.yml"><img src="https://github.com/OnurByte/OmaMonero/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
 </p>
 
+## Install
+
+Add OmaMonero to your Omarchy bar:
+
 ```bash
 omarchy plugin add https://github.com/OnurByte/OmaMonero.git --enable
 ```
 
-XMR/USD prices, an advanced market chart and local payment tools in your existing Omarchy bar. No separate OmaMonero backend, service or user build step.
+You can also use Omarchy’s graphical plugin manager: add `https://github.com/OnurByte/OmaMonero.git` and enable OmaMonero.
 
 ## Monero, at a glance
 
@@ -35,9 +41,9 @@ Scroll to zoom, drag through history, or switch to a line chart. Price comes fir
 
 Actual Omarchy 0.4.2 captures, 1 November 2026. Market values change; the panel shows their source and update time. Original banner and Monero artwork retained.
 
-## Install and use
+## Use
 
-Open the official Omarchy plugin manager, add `https://github.com/OnurByte/OmaMonero.git`, and enable OmaMonero. Open the XMR widget in your existing bar. All settings, diagnostics, payments and removal stay in this panel.
+Open the XMR widget in your existing bar. All settings, diagnostics, payments and removal stay in this panel.
 
 Monero RPC defaults to numeric loopback. XMR/USD prices and the 24-hour chart are enabled by default, as explicitly requested. You can pause public prices in Settings. Choose local, HTTPS direct, Tor or I2P policy there. Tor/I2P uses a local SOCKS5h proxy with remote DNS and never falls back to direct access. Wallet and miner RPC always remain on numeric loopback.
 
