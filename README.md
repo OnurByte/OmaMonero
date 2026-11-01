@@ -9,6 +9,10 @@
   <a href="https://github.com/OnurByte/OmaMonero/actions/workflows/ci.yml"><img src="https://github.com/OnurByte/OmaMonero/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
 </p>
 
+```bash
+omarchy plugin add https://github.com/OnurByte/OmaMonero.git --enable
+```
+
 XMR/USD prices, an advanced market chart and local payment tools in your existing Omarchy bar. No separate OmaMonero backend, service or user build step.
 
 ## Monero, at a glance
@@ -34,12 +38,6 @@ Actual Omarchy 0.4.2 captures, 1 November 2026. Market values change; the panel 
 ## Install and use
 
 Open the official Omarchy plugin manager, add `https://github.com/OnurByte/OmaMonero.git`, and enable OmaMonero. Open the XMR widget in your existing bar. All settings, diagnostics, payments and removal stay in this panel.
-
-You can also install and enable it directly:
-
-```bash
-omarchy plugin add https://github.com/OnurByte/OmaMonero.git --enable
-```
 
 Monero RPC defaults to numeric loopback. XMR/USD prices and the 24-hour chart are enabled by default, as explicitly requested. You can pause public prices in Settings. Choose local, HTTPS direct, Tor or I2P policy there. Tor/I2P uses a local SOCKS5h proxy with remote DNS and never falls back to direct access. Wallet and miner RPC always remain on numeric loopback.
 
