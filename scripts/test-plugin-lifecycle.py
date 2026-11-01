@@ -49,7 +49,7 @@ with tempfile.TemporaryDirectory(prefix='omamonero-manager-') as folder:
                     if result:return result
                 except (AssertionError,ValueError):pass
                 time.sleep(.1)
-            log.flush();log.seek(0);raise AssertionError('Lifecycle observation timed out\n'+log.read())
+            log.flush();log.seek(0);raise AssertionError('Lifecycle observation timed out\n'+run('omarchy-shell','shell','widgetInfo')+'\n'+log.read())
         def widget_ready():
             data=json.loads(run('omarchy-shell','shell','widgetInfo'))
             return data if data.get('ready') and data.get('view') and data['view'].get('privacy') and '/v0_4_1/' in data.get('source','') else None

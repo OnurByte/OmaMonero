@@ -3222,7 +3222,7 @@ ${codeblock}`, options);
       TomlError.x("unfinished numeric value", ctx, startPtr);
     let str = ctx.s.slice(startPtr, ctx.p);
     if (hasUnderscores)
-      str = str.replaceAll("_", "");
+      str = str.replace(/_/g, "");
     return state > 1 ? parseFloat(str) : parseInteger(ctx, str, 10, startPtr);
   }
   function parseIntegerBaseN(ctx, startPtr, base, endChr) {
@@ -3241,7 +3241,7 @@ ${codeblock}`, options);
       TomlError.x("unfinished numeric value", ctx);
     let str = ctx.s.slice(startPtr + 2, ctx.p);
     if (underscore)
-      str = str.replaceAll("_", "");
+      str = str.replace(/_/g, "");
     return parseInteger(ctx, str, base, startPtr);
   }
   function parseInteger(ctx, str, base, startPtr) {
@@ -3467,7 +3467,7 @@ ${codeblock}`, options);
         if (i)
           t = hasOwn ? t[k] : t[k] = /* @__PURE__ */ Object.create(null);
         k = key[i];
-        if ((hasOwn = Object.hasOwn(t, k)) && (typeof t[k] !== "object" || seen.has(t[k]))) {
+        if ((hasOwn = Object.prototype.hasOwnProperty.call(t, k)) && (typeof t[k] !== "object" || seen.has(t[k]))) {
           TomlError.x("trying to redefine an already defined value", ctx, errPtr);
         }
         let unsafe = k === "__proto__";
@@ -3573,7 +3573,7 @@ ${codeblock}`, options);
         }
       }
       k = key[i];
-      if ((hasOwn = Object.hasOwn(t, k)) && ((_a = m[k]) == null ? void 0 : _a.t) === 0 && ((_b = m[k]) == null ? void 0 : _b.d)) {
+      if ((hasOwn = Object.prototype.hasOwnProperty.call(t, k)) && ((_a = m[k]) == null ? void 0 : _a.t) === 0 && ((_b = m[k]) == null ? void 0 : _b.d)) {
         return null;
       }
       if (!hasOwn) {

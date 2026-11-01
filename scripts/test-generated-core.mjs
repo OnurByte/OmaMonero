@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+const manifest=JSON.parse(readFileSync('manifest.json','utf8'));
+const path=manifest.entryPoints.barWidget.replace('BarWidget.qml','generated/Core.js');
+const context=vm.createContext({});
+vm.runInContext('Object.hasOwn=undefined;String.prototype.replaceAll=undefined;BigInt=undefined',context);
+vm.runInContext(readFileSync(path,'utf8').replace(/^\.pragma library\n/,''),context);
+const config=context.OmaCore.legacyConfig('endpoint="http://127.0.0.1:1"\nnetwork="stagenet"\nmarket_enabled=false\npoll_interval_secs=1_0\ntimeout_ms=3_000\n[modules]\nwatch_only_confirmed=true\n');
+assert.equal(config.network,'stagenet');assert.equal(config.poll_interval_secs,10);assert.equal(config.timeout_ms,3000);assert.equal(config.modules.watch_only_confirmed,true);
+console.log('GENERATED_QML_COMPAT_PASS: TOML import without Object.hasOwn/replaceAll/BigInt');
