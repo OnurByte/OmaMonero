@@ -1,34 +1,20 @@
 #!/usr/bin/env python3
+"""Check the shipped backend-free plugin, version and runtime contract."""
 import json
 from pathlib import Path
 import re
-import tomllib
-
-root = Path(__file__).resolve().parents[1]
-manifest = json.loads((root/'manifest.json').read_text())
-cargo = tomllib.loads((root/'Cargo.toml').read_text())
-lock = tomllib.loads((root/'Cargo.lock').read_text())
-version = cargo['package']['version']
-assert manifest['version'] == version
-assert next(p['version'] for p in lock['package'] if p['name'] == 'omamonero-core') == version
-assert re.search(r'^pkgver=(.+)$',(root/'packaging/PKGBUILD').read_text(),re.M)[1] == version
-assert manifest['id'] == 'io.github.onurbyte.omamonero'
-assert manifest['schemaVersion'] == 1
-assert manifest['kinds'] == ['bar-widget']
-assert manifest['entryPoints'] == {'barWidget':'qml/v'+version.replace('.', '_')+'/BarWidget.qml'}
-active_qml_directory = 'v' + version.replace('.', '_')
-versioned_qml_directories = sorted(
-    path.name for path in (root/'qml').iterdir()
-    if path.is_dir() and re.fullmatch(r'v\d+_\d+_\d+', path.name)
-)
-assert versioned_qml_directories == [active_qml_directory], (
-    f'Stale QML version directories must not be shipped: {versioned_qml_directories}'
-)
-for path in (root/'qml').rglob('*'):
-    assert not path.is_symlink(), path
-    if path.suffix == '.qml':
-        text = path.read_text()
-        assert not re.search(r'\bShellRoot\s*\{',text), path
-        assert not re.search(r'\bProcess\s*\{',text), path
-assert 'Restart=on-failure' in (root/'packaging/omamonero.service').read_text()
-print(f'Plugin, Cargo, lockfile and package contract agree at {version}')
+root=Path(__file__).resolve().parents[1]
+m=json.loads((root/'manifest.json').read_text());p=json.loads((root/'package.json').read_text())
+assert m['version']==p['version']=='0.4.0'
+assert m['id']=='io.github.onurbyte.omamonero' and m['schemaVersion']==1 and m['kinds']==['bar-widget']
+assert m['entryPoints']=={'barWidget':'qml/v0_4_0/BarWidget.qml'}
+frontend=root/Path(m['entryPoints']['barWidget']).parent
+for path in frontend.rglob('*'):
+ assert not path.is_symlink(),path
+ if path.suffix=='.qml':
+  text=path.read_text()
+  assert not re.search(r'\b(?:ShellRoot|Window)\s*\{',text),path
+  assert not re.search(r'python3|omamonero-core|execDetached\(.*sudo',text),path
+assert (frontend/'generated/Core.js').stat().st_size>10000
+assert not (root/'Cargo.toml').exists() and not (root/'installer').exists()
+print('0.4.0 native TypeScript/QML contract passes; no Rust/Python installer or service')

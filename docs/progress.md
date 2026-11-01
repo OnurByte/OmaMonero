@@ -1,23 +1,7 @@
-# Delivery status — 0.3.1
+# Delivery status — 0.4.0 candidate
 
-The supplied native Omarchy companion is implemented as a Rust user service
-plus the official plugin-manager Quickshell frontend. The current workspace is
-not a Git checkout; no commits, public repository writes, releases or
-marketplace submissions have been made.
+The Rust/Python companion architecture has been replaced with native TypeScript and QML. The committed JS bundle runs in the existing Omarchy bar/panel. Build tools are contributor-only. All old runtime sources were removed from the active project; prior versions remain in git history.
 
-The 0.3.1 x86_64 candidate is installed in the current Omarchy 4.0.6-1 session.
-The single upper-bar widget, brand artwork, red decline chart, five visible
-price ticks, Receive page, service and setup integration were checked in the
-running Omarchy shell. The Diagnostics tab now uses the compact “Diag” label
-with its full name in the tooltip. Existing explicit USD price consent was
-preserved. The local Monero node is offline; wallet, XMRig and P2Pool adapters
-remain disabled until the user configures their local services.
+The candidate retains market/node data, watch-only wallet and incoming transfers, XMRig, P2Pool, offline address/QR/payment previews, local proof verification and optional OS URI integration. Native setup/removal no longer depends on an installed OmaMonero daemon. Existing settings are imported without rewriting the original TOML. Legacy user-service shutdown requires explicit confirmation.
 
-Rust integration tests (35), Python installer/control tests (24), JS/UI tests
-(11), native QML lint/runtime, official plugin validator, version contract and
-bundle checksums passed. See
-[`verification-0.3.1.md`](verification-0.3.1.md) for the evidence and limits.
-
-This candidate is not officially marketplace-verified. That external status is
-still pending source publication and review of the exact submitted commit; a
-local validator result or checksum is not a substitute.
+Evidence and acceptance limits: [verification-0.4.0.md](verification-0.4.0.md). Publication and marketplace review remain external steps: [publication.md](publication.md).

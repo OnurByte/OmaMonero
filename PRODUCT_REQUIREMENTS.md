@@ -49,3 +49,7 @@ private FileView state carries progress, without subprocess polling.
 
 ## Branding and window correction
 Use the user-supplied OmaMonero-logo.svg unchanged. Trend colors are red for negative, green for positive, and gray for exactly flat movement, independent of theme accent; keep the XMR label white. Never open a blank/white standalone Quickshell window. Test engines must have a QtObject root, not a top-level Item that the host could wrap in a visible window.
+
+## Approved TypeScript/native-only migration (2026-11-01)
+
+The user approved preserving all features while replacing the Rust backend, Python installer and systemd dependency with strict TypeScript compiled into committed QML-compatible JavaScript. This supersedes the mandatory prebuilt-binary/graphical-installer architecture above. Users install through the official graphical Omarchy plugin manager; no developer commands or build tools are required. All flows remain inside the existing native bar/panel. Standard OS utilities may perform narrow transport/desktop operations, but there is no OmaMonero backend process or service. Previous configuration is preserved and old user-service shutdown requires explicit panel confirmation. Shell-off notifications are unavailable without a daemon. Marketplace approval remains an external decision. Follow AGENTS.md for the supplied logo and trend colors, including green at exactly zero.

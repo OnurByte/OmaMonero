@@ -1,41 +1,32 @@
-name: Publish prebuilt backend
-
+name: Publish native plugin
 on:
-  push:
-    branches:
-      - 'release/v*'
-
+  workflow_dispatch:
 permissions:
   contents: write
-
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Validate release version
-        run: |
-          version=$(python3 -c 'import json;print(json.load(open("manifest.json"))["version"])')
-          test "${GITHUB_REF_NAME}" = "release/v${version}"
-          echo "VERSION=${version}" >> "$GITHUB_ENV"
-      - name: Build and test matching backend
-        run: |
-          cargo test --workspace --locked
-          cargo build --release --locked
-          python3 scripts/check-contract.py
-          python3 -m unittest discover -s tests -p '*_test.py'
-          python3 scripts/bundle.py
-      - name: Publish prebuilt release
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: git diff --exit-code -- qml/v0_4_0/generated/Core.js
+      - run: node --test tests/status.test.cjs
+      - run: python3 -m unittest discover -s tests -p '*_test.py'
+      - run: python3 scripts/check-contract.py
+      - run: python3 scripts/package.py
+      - name: Publish plugin archive
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v${VERSION}" \
-            "dist/omamonero-${VERSION}-linux-x86_64.tar.gz" \
-            "dist/omamonero-${VERSION}-linux-x86_64.sha256" \
-            --target "$GITHUB_SHA" \
-            --title "OmaMonero ${VERSION}" \
-            --notes "Native Omarchy plugin. Install with: omarchy plugin add https://github.com/OnurByte/OmaMonero.git --enable. Open XMR > Settings to install the matching user-only backend. Linux x86_64; not marketplace-verified."
+          version=$(node -p 'JSON.parse(require("fs").readFileSync("manifest.json")).version')
+          gh release create "v${version}" "dist/omamonero-plugin-${version}.tar.gz" dist/SHA256SUMS \
+            --target "$GITHUB_SHA" --title "OmaMonero ${version}" \
+            --notes "Native TypeScript/QML Omarchy plugin. Install and manage through the official plugin manager. No OmaMonero backend, service, Rust binary, Python installer or user build step. External prices are opt-in. Marketplace verification is separate and is not claimed by this release."
