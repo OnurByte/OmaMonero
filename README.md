@@ -11,11 +11,31 @@
 
 XMR/USD prices, an advanced market chart and local payment tools in your existing Omarchy bar. No separate OmaMonero backend, service or user build step.
 
+## Monero, at a glance
+
+<p align="center">
+  <img src="docs/screenshots/bar.png" alt="Live XMR/USD price, 24-hour change and sparkline in the native Omarchy bar" width="570">
+</p>
+
+Your price stays in the bar. Open it for real candlesticks, XMR volume and a closer look at the market—without leaving your desktop.
+
+<p align="center">
+  <img src="docs/screenshots/market-panel.png" alt="OmaMonero native market panel with real Kraken candles, volume and readable axes" width="630">
+</p>
+
+Scroll to zoom, drag through history, or switch to a line chart. Price comes first; receiving and optional local tools are one tab away.
+
+<p align="center">
+  <img src="docs/screenshots/about-panel.png" alt="OmaMonero About panel explaining price source, privacy and local payment tools" width="630">
+</p>
+
+Actual Omarchy captures, 1 November 2026. Market values change; the panel shows their source and update time. Original banner and Monero artwork retained.
+
 ## Install and use
 
-Open the official Omarchy plugin manager, add `https://github.com/OnurByte/OmaMonero.git`, and enable OmaMonero. Open the XMR widget in your existing bar. All settings, diagnostics, payments and removal stay in this panel. The repository must contain the 0.4.2 release before installing it from that URL; a local checkout can be validated before publication.
+Open the official Omarchy plugin manager, add `https://github.com/OnurByte/OmaMonero.git`, and enable OmaMonero. Open the XMR widget in your existing bar. All settings, diagnostics, payments and removal stay in this panel.
 
-The default configuration contacts only numeric loopback Monero RPC. XMR/USD prices and the 24-hour chart are enabled by default, as explicitly requested. You can pause public prices in Settings. Choose local, HTTPS direct, Tor or I2P policy there. Tor/I2P uses a local SOCKS5h proxy with remote DNS and never falls back to direct access. Wallet and miner RPC always remain on numeric loopback.
+Monero RPC defaults to numeric loopback. XMR/USD prices and the 24-hour chart are enabled by default, as explicitly requested. You can pause public prices in Settings. Choose local, HTTPS direct, Tor or I2P policy there. Tor/I2P uses a local SOCKS5h proxy with remote DNS and never falls back to direct access. Wallet and miner RPC always remain on numeric loopback.
 
 Price source and freshness are shown with the chart. Stale, invalid or unavailable data is explicit. The widget does not start a Monero node, Tor, I2P, wallet RPC or miner for you.
 

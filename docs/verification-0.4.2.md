@@ -15,3 +15,5 @@ Evidence so far:
 Fresh review identified config-error fallback, empty custom-source fallback and rolling-history drift. Each was reproduced and corrected. Read errors now cancel traffic; only genuinely absent settings permit initial defaults. UI validation requires HTTPS when custom source is selected. Panned charts retain the visible timestamp as new candles arrive.
 
 Public release, actual panel screenshots and final marketplace decision are recorded separately after their authoritative checks; no verification badge is inferred from local tests.
+
+Official fresh and 0.4.1 upgrade manager lifecycles pass at dac041f. The candidate was updated through the official manager in the existing desktop, with the public origin restored immediately afterward. The real bar shows live Kraken XMR/USD and 24h change. Actual bar, market and About captures are in docs/screenshots; they contain no fixture market data. Approved banner, root preview and supplied icon were not changed.
