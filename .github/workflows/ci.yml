@@ -10,62 +10,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: cargo fmt --all -- --check
-      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
-      - run: cargo test --workspace --locked
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: git diff --exit-code -- qml/v0_4_0/generated/Core.js
+      - run: npm audit --audit-level=moderate
       - run: node --test tests/status.test.cjs
       - run: python3 scripts/check-contract.py
-      - run: python3 -m unittest discover -s tests -p "*_test.py"
+      - run: python3 -m unittest discover -s tests -p '*_test.py'
       - name: Official Omarchy validator (pinned Quattro contract)
         run: |
           curl --fail --location --retry 3 https://raw.githubusercontent.com/omacom/omarchy/717175d4a8c5a12f6c0fff10dcc3c1c08ef3a0d1/bin/omarchy-plugin-validate -o /tmp/omarchy-plugin-validate
-          bash /tmp/omarchy-plugin-validate .
-      - name: Deterministic source and frontend archives
+          python3 scripts/validate-plugin.py /tmp/omarchy-plugin-validate
+      - name: Deterministic native plugin archive
         run: |
           python3 scripts/package.py
           cp dist/SHA256SUMS /tmp/first-checksums
           python3 scripts/package.py
           cmp /tmp/first-checksums dist/SHA256SUMS
-      - name: Reproducible release binary (same runner and toolchain)
-        env:
-          SOURCE_DATE_EPOCH: '0'
-          RUSTFLAGS: --remap-path-prefix=${{ github.workspace }}=/omamonero
-        run: |
-          CARGO_TARGET_DIR=target/build-a cargo build --release --locked
-          CARGO_TARGET_DIR=target/build-b cargo build --release --locked
-          cmp target/build-a/release/omamonero-core target/build-b/release/omamonero-core
-          mkdir -p target/release
-          cp target/build-a/release/omamonero-core target/release/omamonero-core
-          python3 scripts/bundle.py
       - uses: actions/upload-artifact@v4
         with:
-          name: omamonero-linux-x86_64
+          name: omamonero-plugin-0.4.0
           path: |
-            target/build-a/release/omamonero-core
-            dist/*.tar.gz
-            dist/PKGBUILD
+            dist/omamonero-plugin-0.4.0.tar.gz
             dist/SHA256SUMS
-            dist/*.sha256
-            install.sh
-  audit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo install cargo-audit --locked
-      - run: cargo audit --deny warnings
-  dependency-review:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
