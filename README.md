@@ -8,6 +8,7 @@ XMR/USD prices, an advanced market chart and local payment tools in your existin
 
 <p align="center">
   <a href="https://github.com/tcballard/omarchy-badges"><img src="https://raw.githubusercontent.com/tcballard/omarchy-badges/75975e5b5bf75e7ede3764bcd2950046f7abfe2c/badges/v1/omarchy-plugin.svg" alt="Built for Omarchy: Plugin"></a>
+  <a href="https://plugins.omarchy.org/plugin.html?id=io.github.onurbyte.omamonero"><img src="https://raw.githubusercontent.com/OnurByte/OmaMonero/badges/omarchy-marketplace.svg" alt="OmaMonero on Omarchy Marketplace, with install command copies, hearts and views"></a>
   <a href="https://github.com/OnurByte/OmaMonero/actions/workflows/ci.yml"><img src="https://github.com/OnurByte/OmaMonero/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
 </p>
 
