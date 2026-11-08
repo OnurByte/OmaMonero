@@ -1,0 +1,29 @@
+name: Marketplace badge
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: marketplace-badge
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # A failed fetch fails the run here, before the published badge is touched.
+      - run: python3 scripts/marketplace-badge.py "$RUNNER_TEMP/omarchy-marketplace.svg"
+      # Separate branch: the marketplace flags any new commit on main as "Update unverified".
+      - name: Publish only when the counts changed
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git ls-remote --exit-code --heads origin refs/heads/badges > /dev/null; then
+            git fetch --depth=1 origin refs/heads/badges
+            git switch --force-create badges FETCH_HEAD
+          else
+            git switch --orphan badges
+          fi
+          cp "$RUNNER_TEMP/omarchy-marketplace.svg" omarchy-marketplace.svg
+          git add omarchy-marketplace.svg
+          git diff --cached --quiet || { git commit -m 'Update marketplace badge' && git push origin badges; }
